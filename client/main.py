@@ -1,5 +1,5 @@
 import socket
-from json import dumps
+from json import dumps, loads
 from time import sleep
 
 def main():
@@ -12,7 +12,7 @@ def main():
         data = sock.recv(1024)
         sock.close()
 
-        print(data, "\n\n")
+        print(loads(data.decode()), "\n\n")
         sleep(1)
 
 if __name__ == "__main__":
