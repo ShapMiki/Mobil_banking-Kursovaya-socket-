@@ -12,7 +12,7 @@ def main():
         data = sock.recv(1024)
         sock.close()
 
-        print(loads(data.decode()), "\n\n")
+        data = loads(data.decode())
         sleep(1)
 
 if __name__ == "__main__":

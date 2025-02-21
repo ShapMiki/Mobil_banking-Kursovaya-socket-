@@ -1,7 +1,7 @@
 import socket
 from threading import Thread
 from json import dumps, loads
-
+from datetime import datetime
 
 def processing_data(data):
     data = loads(data.decode())
@@ -13,14 +13,23 @@ def processing_data(data):
 
 def handle_client(conn):
     while True:
-        data = conn.recv(1024)
-        if not data:
+        try:
+            data = conn.recv(1024)
+            if not data:
+                break
+
+            answer = processing_data(data)
+
+            conn.send(answer)
+        except ConnectionResetError:
+            print(f"log {datetime.now()}: подключение неожиданно разорвано")
+            conn.close()
+            break
+        except OSError:
+            print(f"log {datetime.now()}: соединение закрыто")
+            conn.close()
             break
 
-        answer = processing_data(data)
-        conn.send(answer)
-
-        print(data)
     conn.close()
 
 
