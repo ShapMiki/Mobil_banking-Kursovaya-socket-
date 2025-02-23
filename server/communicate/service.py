@@ -1,0 +1,57 @@
+
+from cryptography.fernet import Fernet
+from json import loads, dumps
+
+from server.communicate.route import router_dir
+
+class Proccessing:
+    @staticmethod
+    def post(cls, data) -> dict:
+        routers = router_dir['post']
+        if data['route'] not in routers:
+            return {"status": 404, "details": "Route not found"}
+        pass
+
+    @staticmethod
+    def get(cls, data) ->dict:
+        routers = router_dir['get']
+        if data['route'] not in routers:
+            return {"status": 404, "details": "Route not found"}
+        pass
+
+    @staticmethod
+    def security_post(cls, data) -> dict:
+        routers = router_dir['SECURITY_POST']
+        if data['route'] not in routers:
+            return {"status": 404, "details": "Route not found"}
+
+        #расшифровка
+        data = cls.decryption(data)
+        #действие
+        answer = routers[data['route']](data)
+        #шифровка
+        #!!!!!!!!
+        return answer
+
+    @staticmethod
+    def encryption(self, data):
+        pattern = {
+            'method': '',
+            'encrypt': True,
+            'data': ''
+        }
+
+        json_data = dumps(data).encode()
+        encrypted_data = self.cipher_suite.encrypt(json_data)
+
+        return encrypted_data
+
+    @staticmethod
+    def decryption(self, data):
+        if not data['encrypt']:
+            return data
+
+        decrypted_data = self.cipher_suite.decrypt(data['data'])
+        data = { **data, **loads(decrypted_data.decode())}
+
+        return data
