@@ -2,22 +2,30 @@ import socket
 from threading import Thread
 from json import dumps, loads
 from datetime import datetime
+from communicate.service import Proccessing
 
 HOST = "localhost"
 PORT = 3333
 CONNECTION_TIMEOUT = 30
 
 functions = {
-    "get": lambda x: x,
-    "post": lambda x: x,
-    "SECURITY_POST": lambda x: x,
+    "get": lambda: Proccessing.get,
+    "post": lambda: Proccessing.post,
+    "SECURITY_POST": lambda: Proccessing.security_post,
 }
 
 def processing_data(data):
     data = loads(data.decode())
-    ###НУжно сделать распределение по функциям
-    answer = {"status": 200}
 
+    if not ('headers' in data or 'data' in data):
+        return {"status": 400, "details": "bad request"}
+
+    try:
+        answer = functions[data['headers']['method']](data)
+    except KeyError:
+        answer = {"status": 404, 'details': 'not found'}
+    except:
+        answer = {"status":500, "details": "internal Serverv Error"}
 
     answer = dumps(answer).encode()
     return answer
@@ -64,6 +72,7 @@ def main():
 
     while True:
         conn, addr = sock.accept()
+
         client_thread = Thread(target=handle_client, args=(conn,))
         client_thread.start()
 

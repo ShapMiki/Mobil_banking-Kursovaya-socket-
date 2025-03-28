@@ -17,6 +17,10 @@ class Client:
         self.sock.connect((HOST, PORT))
 
         self.cipher_suite = Fernet(key)
+        self.header_pattern = {
+            'method': '',
+            'route': ''
+        }
 
     def reconnect(self):
         try:
@@ -26,10 +30,16 @@ class Client:
              return False
 
 
-    def post(self, data) -> None:
+    def post(self, route, data) -> None:
         try:
             data = self.encryption(data)
-            data['method'] = 'post'
+
+            headers = self.header_pattern.copy()
+            headers['method'] = 'post'
+            headers['route'] = route
+
+            message = [headers, data]
+
             self.sock.send(data)
         except:
             if self.reconnect():
@@ -93,12 +103,6 @@ class Client:
             raise ConnectionError(details)
 
     def encryption(self, data):
-        pattern = {
-            'method': '',
-            'encrypt': True,
-            'data': ''
-        }
-
         json_data = dumps(data).encode()
         encrypted_data = self.cipher_suite.encrypt(json_data)
 

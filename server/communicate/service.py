@@ -1,4 +1,3 @@
-
 from cryptography.fernet import Fernet
 from json import loads, dumps
 
@@ -17,6 +16,9 @@ class Proccessing:
         routers = router_dir['get']
         if data['route'] not in routers:
             return {"status": 404, "details": "Route not found"}
+
+        answer = routers[data['route']](data)
+
         pass
 
     @staticmethod
@@ -32,6 +34,10 @@ class Proccessing:
         #шифровка
         #!!!!!!!!
         return answer
+
+    @staticmethod
+    def auth_post(cls, data):
+        pass
 
     @staticmethod
     def encryption(self, data):
