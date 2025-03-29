@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     algorithm_for_jwt: str
     host: str
     port: str
-
+    secret_server_key: str
+    time_zone: int
+    config_version:str
     @model_validator(mode="before")
     @classmethod
     def set_database_url(cls, values):

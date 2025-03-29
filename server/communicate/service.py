@@ -1,7 +1,7 @@
-from cryptography.fernet import Fernet
 from json import loads, dumps
 
 from server.communicate.route import router_dir
+
 
 class Proccessing:
     @staticmethod
@@ -11,6 +11,9 @@ class Proccessing:
             return {"status": 404, "details": "Route not found"}
         pass
 
+        #TODO: сделать расшифровку, обработку  данных, шифрование и отправка ответа по ключу сервера
+
+
     @staticmethod
     def get(cls, data) ->dict:
         routers = router_dir['get']
@@ -19,13 +22,15 @@ class Proccessing:
 
         answer = routers[data['route']](data)
 
-        pass
+        return answer
 
     @staticmethod
     def security_post(cls, data) -> dict:
         routers = router_dir['SECURITY_POST']
         if data['route'] not in routers:
             return {"status": 404, "details": "Route not found"}
+
+        # TODO: сделать расшифровку, обработку  данных, шифрование и отправка ответа по ключу пользователя
 
         #расшифровка
         data = cls.decryption(data)
@@ -47,6 +52,7 @@ class Proccessing:
             'data': ''
         }
 
+        #TODO: разобраться, что за гауно
         json_data = dumps(data).encode()
         encrypted_data = self.cipher_suite.encrypt(json_data)
 

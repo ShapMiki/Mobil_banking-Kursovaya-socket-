@@ -1,7 +1,7 @@
 import socket
 
 from cryptography.fernet import Fernet
-from json import loads, dumps
+from json import loads, dumps, load, dump
 from time import sleep
 
 
@@ -17,9 +17,20 @@ class Client:
         self.sock.connect((HOST, PORT))
 
         self.cipher_suite = Fernet(key)
+        self.config = {}
+        with open("/data/config.json", "r") as json_file:
+            self.config = load(json_file)
+
+        if not self.config["ip"]:
+            self.config["ip"] =  socket.gethostbyname(socket.gethostname())
+            with open("/data/config.json", "w") as json_file:
+                dump(self.config, json_file)
+
         self.header_pattern = {
             'method': '',
-            'route': ''
+            'route': '',
+            "ip": self.config["ip"],
+            "config_version": self.config["config_version"]
         }
 
     def reconnect(self):
@@ -38,6 +49,7 @@ class Client:
             headers['method'] = 'post'
             headers['route'] = route
 
+            #TODO: Переписать в соответсвии серверу
             message = [headers, data]
 
             self.sock.send(data)

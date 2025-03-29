@@ -2,7 +2,11 @@ import socket
 from threading import Thread
 from json import dumps, loads
 from datetime import datetime
+
 from communicate.service import Proccessing
+from config import settings
+
+
 
 HOST = "localhost"
 PORT = 3333
@@ -20,12 +24,20 @@ def processing_data(data):
     if not ('headers' in data or 'data' in data):
         return {"status": 400, "details": "bad request"}
 
+    if not data['headers']['config_version'] == settings.config_version:
+        return {"status": 421,  'details': "You need to update app"}
+
     try:
-        answer = functions[data['headers']['method']](data)
+        print(f"\nlog: {datetime.now().strftime('%h:%m:%s %d:%m:%Y')} \nip:{data['headers']['ip']}\n")
+    except KeyError:
+        return {'status': 403, 'details': 'Forbidden. Need you ip'}
+
+    try:
+        answer = functions[data['headers']['method']](data)                     #Испольнение запроса
     except KeyError:
         answer = {"status": 404, 'details': 'not found'}
-    except:
-        answer = {"status":500, "details": "internal Serverv Error"}
+    except Exception as e:
+        answer = {"status":500, "details": f"internal Serverv Error: {e}"}
 
     answer = dumps(answer).encode()
     return answer
