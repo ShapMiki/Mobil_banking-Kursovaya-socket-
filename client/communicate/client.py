@@ -6,56 +6,84 @@ from time import sleep
 
 
 
-HOST = "localhost"
-PORT = 3333
-key = b'M95xDbhZivBW2dvs00BSE7WPgh6c2oEXIo7EX5NUizc='
 
 
 class Client:
     def __init__(self):
-        self.sock = socket.socket()
-        self.sock.connect((HOST, PORT))
-
-        self.cipher_suite = Fernet(key)
         self.config = {}
-        with open("/data/config.json", "r") as json_file:
+        with open("data/server_config.json", "r") as json_file:
             self.config = load(json_file)
 
         if not self.config["ip"]:
-            self.config["ip"] =  socket.gethostbyname(socket.gethostname())
-            with open("/data/config.json", "w") as json_file:
+            self.config["ip"] = socket.gethostbyname(socket.gethostname())
+            with open("data/server_config.json", "w") as json_file:
                 dump(self.config, json_file)
+
+        self.sock = socket.socket()
+        try:
+            self.sock.connect((self.config["host"], self.config["port"]))
+        except:
+            pass
+            #raise ConnectionError("нет подключения, Попробуйте позже")
+
+        try:
+            self.personal_key = self.config["key"].encode()
+        except:
+            self.personal_key = ""
+        self.server_key = self.config["server_key"].encode()
+
 
         self.header_pattern = {
             'method': '',
             'route': '',
+            'JWT': self.config["JWT"],
             "ip": self.config["ip"],
             "config_version": self.config["config_version"]
         }
 
-    def reconnect(self):
+    def update_json(self):
+        with open("data/server_config.json", "r") as json_file:
+            self.config = load(json_file)
+
+    async def reconnect(self):
         try:
-            self.sock.connect((HOST, PORT))
+            self.sock.connect((self.config["host"], self.config["port"]))
             return True
         except:
              return False
 
-
-    def post(self, route, data) -> None:
+    async def get(self, route, data) -> dict:
         try:
-            data = self.encryption(data)
+            headers = self.header_pattern.copy()
+            headers['method'] = 'get'
+            headers['route'] = route
+            request = {'headers': headers, 'data': data}
+            self.sock.send(dumps(request).encode())
+        except:
+            if await self.reconnect():
+                return await self.get(route, data)
+            else:
+                raise ConnectionError("нет подключения, Попробуйте позже")
+
+        answer = self.sock.recv(1024)
+        answer = loads(answer.decode())
+
+        self.check_answer(answer)
+        return answer
+
+    async def post(self, route, data) -> None:
+        try:
+            data = self.encryption(self.server_key, data)
 
             headers = self.header_pattern.copy()
             headers['method'] = 'post'
             headers['route'] = route
 
-            #TODO: Переписать в соответсвии серверу
-            message = [headers, data]
-
-            self.sock.send(data)
+            request = {'headers': headers, 'data': data}
+            self.sock.send(dumps(request).encode())
         except:
-            if self.reconnect():
-                return self.post(data)
+            if await self.reconnect():
+                return await self.post(route, data)
             else:
                 raise ConnectionError("нет подключения")
 
@@ -68,43 +96,38 @@ class Client:
                 details = answer['details']
             raise ConnectionError(details)
 
-        return(answer)
-
-
-    def security_post(self, data):
-        try:
-            data = self.encryption(data)
-            data['method'] = 'SECURITY_POST'
-            self.sock.send(data)
-        except:
-            if self.reconnect():
-                return self.security_post(data)
-            else:
-                raise ConnectionError("нет подключения")
-
-        answer = self.sock.recv(1024)
-        answer = loads(answer.decode())
-
-        self.check_answer(answer)
-        if answer['data']:
-            answer = self.decryption(answer[data])
+        answer['data'] = self.decryption(self.server_key, answer['data'])
 
         return answer
 
-    def get(self, data) -> dict:
+
+    async def security_post(self, route, data):
         try:
-            data['method'] = 'get'
-            self.sock.send(dumps(data).encode())
+            data = self.encryption(self.personal_key, data)
+
+            headers = self.header_pattern.copy()
+            headers['method'] = 'SECURITY_POST'
+            headers['route'] = route
+
+            request = {'headers': headers, 'data': data}
+            self.sock.send(dumps(request).encode())
         except:
-            if self.reconnect():
-                return self.get(data)
+            if await self.reconnect():
+                return await self.security_post(route, data)
             else:
                 raise ConnectionError("нет подключения")
 
         answer = self.sock.recv(1024)
         answer = loads(answer.decode())
 
-        self.check_answer(answer)
+        if not 200 <= answer["status"] <= 299:
+            details = ""
+            if answer['details']:
+                details = answer['details']
+            raise ConnectionError(details)
+
+        answer['data'] = self.decryption(self.personal_key, answer['data'])
+
         return answer
 
     def check_answer(self, answer):
@@ -114,20 +137,22 @@ class Client:
                 details = answer['details']
             raise ConnectionError(details)
 
-    def encryption(self, data):
+    def encryption(self, key, data):
+        cipher_suite = Fernet(key)
         json_data = dumps(data).encode()
-        encrypted_data = self.cipher_suite.encrypt(json_data)
+        encrypted_data = cipher_suite.encrypt(json_data)
 
         return encrypted_data
 
-    def decryption(self, data):
-        if not data['encrypt']:
-            return data
-
-        decrypted_data = self.cipher_suite.decrypt(data['data'])
-        data = { **data, **loads(decrypted_data.decode())}
+    def decryption(self, key, data):
+        cipher_suite = Fernet(key)
+        decrypted_data = cipher_suite.decrypt(data['data'])
+        data = {**data, **loads(decrypted_data.decode())}
 
         return data
 
     def close_connection(self):
         self.sock.close()
+
+
+client = Client()

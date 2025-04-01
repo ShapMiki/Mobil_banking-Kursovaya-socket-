@@ -12,16 +12,28 @@ def router(method, route):
 
 
 @router('get', 'get_name')
-def get_name(id):
-    print(id)
+def get_name(data):
+    print(data)
+
+
 
 @router('post', 'get_balance')
-def get_balance(id):
-    print(id)
+def get_balance(data):
+    print(data)
+
+@router('post', 'registration')
+def registrate(data):
+    print(data)
+
+@router('post', 'login')
+def login(data):
+    print(data)
+
+
 
 @router('SECURITY_POST', 'set_balance')
-def set_balance(id):
-    print(id)
+def set_balance(data):
+    print(data)
 
 # Test the functions
 router_dir['get']['get_name'](3435)

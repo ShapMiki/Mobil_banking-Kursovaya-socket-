@@ -24,6 +24,8 @@ class Proccessing:
 
         return answer
 
+    #TODO: Написать отдельный метод для регистрации и авторизации, обновления jwt
+
     @staticmethod
     def security_post(cls, data) -> dict:
         routers = router_dir['SECURITY_POST']

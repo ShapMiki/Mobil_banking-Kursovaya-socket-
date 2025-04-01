@@ -1,34 +1,68 @@
-from cryptography.fernet import Fernet
-from json import dumps, loads
-
-# Генерация ключа
-#key = Fernet.generate_key()
-
-key = b'M95xDbhZivBW2dvs00BSE7WPgh6c2oEXIo7EX5NUizc='
-cipher_suite = Fernet(key)
-
-def encryption(data):
-    pattern = {
-        'method': 'POST',
-        'encrypt': True,
-        'data': ''
-    }
-
-    json_data = dumps(data).encode()
-
-    # Шифрование данных
-    encrypted_data = cipher_suite.encrypt(json_data)
-    print(encrypted_data)
-    return encrypted_data
-
-def decryption(encrypted_data):
-    decrypted_data = cipher_suite.decrypt(encrypted_data)
-
-    data = loads(decrypted_data.decode())
-    return data
+from communicate.client import client
+from json import load, dump
 
 
 
-# Пример использования
-encrypted = encryption({"popa": 'pisa'})
-print(decryption(encrypted))
+async def login(phone, password):
+    answer = await client.post('login', {
+        'phone': phone,
+        'password': password
+    })
+
+    with open("data/server_config.json", "r") as json_file:
+       config = load(json_file)
+
+    try:
+        config['JWT'] = answer['JWT']
+        config["key"] = answer["key"]
+    except KeyError:
+        raise ConnectionAbortedError('Неверный логин или пароль')
+    with open("data/server_config.json", "w") as json_file:
+        dump(config, json_file)
+
+    client.update_json()
+
+    return True
+
+
+async def registration(name, surname, passport_number, passport, phone, password):
+    if not name or not surname or not passport_number or not passport or not phone or not password:
+        raise ValueError('Все поля должны быть заполнены')
+
+    if len(name) < 3 or len(surname) < 3:
+        raise ValueError('Имя и фамилия должны быть длиннее 3 символов')
+
+    if len(passport) != 14:
+        raise ValueError('Номер паспорта должен быть 14 символов')
+    if len(passport_number) != 9:
+        raise ValueError('Номер паспорта должен быть 9 символов')
+
+    phone = phone.replace(' ', '')
+    phone = phone.replace('-', '')
+    phone = phone.replace('(', '')
+    phone = phone.replace(')', '')
+    if len(phone) != 13:
+        raise ValueError('Номер телефона должен быть 13 символов')
+
+    answer = await client.post('registration', {
+        'name': name.get(),
+        'surname': surname.get(),
+        'passport_number': passport_number.get(),
+        'passport': passport.get(),
+        'phone': phone.get(),
+        'password': password.get()
+    })
+
+
+    with open("data/server_config.json", "r") as json_file:
+       config = load(json_file)
+
+    config['JWT'] = answer['JWT']
+    config["key"] = answer["key"]
+
+    with open("data/server_config.json", "w") as json_file:
+        dump(config, json_file)
+
+    client.update_json()
+
+    return True
