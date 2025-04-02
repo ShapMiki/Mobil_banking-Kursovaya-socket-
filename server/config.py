@@ -16,12 +16,12 @@ class Settings(BaseSettings):
     secret_server_key: str
     time_zone: int
     config_version:str
+
     @model_validator(mode="before")
     @classmethod
     def set_database_url(cls, values):
         values['DATABASE_URL'] = f"postgresql+asyncpg://{values['DB_USER']}:{values['DB_PASSWORD']}@{values['DB_HOST']}:{values['DB_PORT']}/{values['DB_NAME']}"
         return values
-
     class Config:
         env_file = ".env"
 

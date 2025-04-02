@@ -20,11 +20,11 @@ class Client:
                 dump(self.config, json_file)
 
         self.sock = socket.socket()
+        print(self.config)
         try:
             self.sock.connect((self.config["host"], self.config["port"]))
         except:
-            pass
-            #raise ConnectionError("нет подключения, Попробуйте позже")
+            pass #raise ConnectionError("нет подключения, Попробуйте позже")
 
         try:
             self.personal_key = self.config["key"].encode()

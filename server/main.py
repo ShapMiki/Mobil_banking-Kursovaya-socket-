@@ -8,8 +8,8 @@ from config import settings
 
 
 
-HOST = "localhost"
-PORT = 3333
+HOST = settings.host
+PORT = int(settings.port)
 CONNECTION_TIMEOUT = 30
 
 functions = {

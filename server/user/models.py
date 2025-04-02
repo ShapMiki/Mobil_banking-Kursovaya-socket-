@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Double, Computed, Date, ARRAY
+from sqlalchemy import DateTime, Column, Integer, String, Double, Computed, Date, ARRAY
 from sqlalchemy.orm import relationship
+import secrets
 
 from modules.database import Base
 
@@ -13,13 +14,13 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name  = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     surname = Column(String)
     telephone = Column(String)
     passport_number = Column(String, unique=True)
     passport_id = Column(String, unique=True)
-    registered_at = Column(Date , default=datetime.utcnow(), nullable=False)
-    last_seance = Column(Date, default=datetime.utcnow(), nullable=False)
+    registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seance = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     password = Column(String, nullable=False)
 
@@ -28,7 +29,7 @@ class User(Base):
 
     image = Column(String, default='none_user_photo.jpg')
 
-    cards= relationship('card', secondary=card_user_association, back_populates='owners')
+    # Связь "один ко многим" с Card
+    cards = relationship('Card', back_populates='owner')
 
-    key = Column(String, default=Computed())#TODO: Сделать автогенерацию ключа
-
+    key = Column(String, default=secrets.token_hex(32))

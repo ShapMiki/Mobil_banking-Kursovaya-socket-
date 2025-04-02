@@ -1,6 +1,6 @@
 from json import loads, dumps
 
-from server.communicate.route import router_dir
+from communicate.route import router_dir
 
 
 class Proccessing:
