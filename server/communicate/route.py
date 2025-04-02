@@ -1,3 +1,7 @@
+from user.dao import UsersDAO
+from user.auth import get_password_hash, verify_password, authenticate_user, create_access_token, get_current_user
+
+
 router_dir = {
     'get': {},
     'post': {},
@@ -21,14 +25,54 @@ def get_name(data):
 def get_balance(data):
     print(data)
 
+@router('post', 'check_auth')
+def check_auth(data):
+    user = get_current_user(data)
+    if not user:
+        return {"status": 401, "details": "Unauthorized"}
+
+    jwt = create_access_token(data={"sub": str(user.id)})
+    return {"JWT": jwt, "Auth": True}
+
 @router('post', 'registration')
 def registrate(data):
-    print(data)
+    data = data['data']
+    try:
+        user = UsersDAO.add_user(
+            name=data['name'],
+            surname=data['surname'],
+            passport_number=data['passport_number'],
+            passport_id=data['passport_id'],
+            telephone=data['telephone'],
+            password=get_password_hash(data['password'])
+        )
+        
+        # Получаем данные пользователя до закрытия сессии
+        user_id = user.id
+        user_key = user.key
+        
+        jwt = create_access_token(data={"sub": str(user_id)})
+        return {'JWT': jwt, "key": user_key}
+    except Exception as e:
+        return {"status": 500, "details": f"Registration error: {str(e)}"}
+
 
 @router('post', 'login')
 def login(data):
     print(data)
+    try:
+        data = data['data']
+        user = authenticate_user(data['telephone'], data['password'])
+    except KeyError:
+        return {"status": 401, "details": "Bad data"}
+    except AttributeError:
+        return {"status": 403, "details": "Неверный логин или пароль"}
 
+    if not user:
+        return {"status": 403, "details": "Неверный логин или пароль"}
+    jwt = create_access_token(data={"sub": str(user.id)})
+    key = user.key
+    return {'JWT': jwt, "key":key}
 
 
 @router('SECURITY_POST', 'set_balance')

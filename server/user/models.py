@@ -1,9 +1,9 @@
 from sqlalchemy import DateTime, Column, Integer, String, Double, Computed, Date, ARRAY
 from sqlalchemy.orm import relationship
-import secrets
+from cryptography.fernet import Fernet
 
 from modules.database import Base
-
+from card.models import Card
 
 from datetime import datetime
 
@@ -16,7 +16,7 @@ class User(Base):
 
     name = Column(String, nullable=False)
     surname = Column(String)
-    telephone = Column(String)
+    telephone = Column(String, unique=True, nullable=False)
     passport_number = Column(String, unique=True)
     passport_id = Column(String, unique=True)
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -32,4 +32,4 @@ class User(Base):
     # Связь "один ко многим" с Card
     cards = relationship('Card', back_populates='owner')
 
-    key = Column(String, default=secrets.token_hex(32))
+    key = Column(String, default=Fernet.generate_key())

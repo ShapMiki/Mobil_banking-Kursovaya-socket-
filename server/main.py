@@ -3,6 +3,7 @@ from threading import Thread
 from json import dumps, loads
 from datetime import datetime
 
+
 from communicate.service import Proccessing
 from config import settings
 
@@ -10,16 +11,17 @@ from config import settings
 
 HOST = settings.host
 PORT = int(settings.port)
-CONNECTION_TIMEOUT = 30
+CONNECTION_TIMEOUT = 600
 
 functions = {
-    "get": lambda: Proccessing.get,
-    "post": lambda: Proccessing.post,
-    "SECURITY_POST": lambda: Proccessing.security_post,
+    "get": lambda data: Proccessing.get(data),
+    "post": lambda data: Proccessing.post(data),
+    "SECURITY_POST": lambda data: Proccessing.security_post(data)
 }
 
 def processing_data(data):
     data = loads(data.decode())
+    print(data)
 
     if not ('headers' in data or 'data' in data):
         return {"status": 400, "details": "bad request"}
@@ -28,16 +30,22 @@ def processing_data(data):
         return {"status": 421,  'details': "You need to update app"}
 
     try:
-        print(f"\nlog: {datetime.now().strftime('%h:%m:%s %d:%m:%Y')} \nip:{data['headers']['ip']}\n")
+        print(f"\nlog: {datetime.now().strftime('%H:%M:%S %d.%m.%Y')} \nip:{data['headers']['ip']}\n")
     except KeyError:
         return {'status': 403, 'details': 'Forbidden. Need you ip'}
 
     try:
         answer = functions[data['headers']['method']](data)                     #Испольнение запроса
-    except KeyError:
+    except KeyError as e:
+        raise e
         answer = {"status": 404, 'details': 'not found'}
     except Exception as e:
         answer = {"status":500, "details": f"internal Serverv Error: {e}"}
+        raise e
+
+
+    if not 'status' in answer.keys():
+        answer['status'] = 200
 
     answer = dumps(answer).encode()
     return answer
@@ -47,7 +55,7 @@ def handle_client(conn):
     conn.settimeout(CONNECTION_TIMEOUT)
     while True:
         try:
-            data = conn.recv(1024)
+            data = conn.recv(2048)
 
             if not data:
                 continue
@@ -72,6 +80,7 @@ def handle_client(conn):
         except Exception as e:
             answer  = {"status": 500, "details": str(e)}
             conn.send(dumps(answer).encode())
+            raise e
             break
 
     conn.close()

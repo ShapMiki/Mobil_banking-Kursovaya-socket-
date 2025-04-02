@@ -1,30 +1,37 @@
 from dao.base import BaseDAO
-from modules.database import async_session_maker
-from users.models import Users
+from modules.database import Session
+from user.models import User
 from sqlalchemy import select, insert, update
 
 
 class UsersDAO(BaseDAO):
-    model = Users
+    model = User
 
     @classmethod
-    async def update_balance(cls, id, ballance):
-        async with async_session_maker() as session:
+    def update_balance(cls, id, ballance):
+        with Session() as session:
             query = update(cls.model).values(ballance=ballance).where(cls.model.id == id)
-            await session.execute(query)
-            await session.commit()
+            session.execute(query)
+            session.commit()
 
     @classmethod
-    async def update_one(cls, id, **kwargs):
-        async with async_session_maker() as session:
+    def update_one(cls, id, **kwargs):
+        with Session() as session:
             query = cls.model.__table__.update().values(**kwargs).where(cls.model.id == id)
-            await session.execute(query)
-            await session.commit()
+            session.execute(query)
+            session.commit()
 
-    @staticmethod
-    async def add_one(email: str, name: str, password: str, surname: str = None):
-        async with async_session_maker() as session:
-            new_user = Users(email=email, name=name, password=password, surname=surname)
+    @classmethod
+    def add_user(cls,
+            name: str,  surname: str, passport_number:str,
+            passport_id, telephone:str, password: str
+                      ):
+        with Session() as session:
+            new_user = User(
+                name=name, surname=surname, passport_number=passport_number,
+                passport_id=passport_id, telephone=telephone, password=password
+            )
             session.add(new_user)
-            await session.commit()
+            session.commit()
+            session.refresh(new_user)
             return new_user
