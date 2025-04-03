@@ -64,11 +64,25 @@ class GUIManager:
     def update_user_data(self):
         try:
             self.user_data = get_user_data()
+            print("Получены данные пользователя:", self.user_data)  # Отладочная информация
         except Exception as e:
+            print("Ошибка при получении данных:", str(e))  # Отладочная информация
             self.open_popup(e)
 
     def authorizate_buid(self):
-        self.update_user_data()
+        def run():
+            try:
+                self.update_user_data()
+                print("Данные перед построением интерфейса:", self.user_data)  # Отладочная информация
+                self.app.after(0, self._build_authorized_interface)
+            except Exception as e:
+                print("Ошибка в потоке авторизации:", str(e))  # Отладочная информация
+                self.app.after(0, self.open_popup, str(e))
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _build_authorized_interface(self):
+        print("Начало построения интерфейса, данные:", self.user_data)  # Отладочная информация
         self.tabview = CTkTabview(self.app, anchor="s")
         self.tabview.pack(expand=True, fill='both')
 
@@ -79,7 +93,6 @@ class GUIManager:
         self.build_payment_tab()
         self.build_main_tab()
         self.build_personal_account()
-
 
     def build_payment_tab(self):
         #TODO: построить вкладку платежей
@@ -93,31 +106,32 @@ class GUIManager:
         self.app.after(0, self.tabview.destroy)
         self.app.after(0, self.non_authorizate_buid)
 
-
-
     def build_personal_account(self):
+        print("Построение личного кабинета, данные:", self.user_data)  # Отладочная информация
+        if not self.user_data:
+            print("Данные пользователя пустые!")  # Отладочная информация
+            return
+
         CTkLabel(self.personal_account, text="Личный кабинет", font=self.font['h1']).place(x=self.width*0.33, y=50)
 
         CTkLabel(self.personal_account, text=f"Имя:",  font=self.font['h5']).place(x=70, y=120)
-        CTkLabel(self.personal_account, text=f"{self.user_data['name']}", font=self.font['p']).place(x=150, y=120)
+        CTkLabel(self.personal_account, text=f"{self.user_data.get('name', 'Не указано')}", font=self.font['p']).place(x=150, y=120)
 
         CTkLabel(self.personal_account, text=f"Фамилия:",  font=self.font['h5']).place(x=70, y=150)
-        CTkLabel(self.personal_account, text=f"{self.user_data['surname']}", font=self.font['p']).place(x=150, y=150)
+        CTkLabel(self.personal_account, text=f"{self.user_data.get('surname', 'Не указано')}", font=self.font['p']).place(x=150, y=150)
 
         CTkLabel(self.personal_account, text=f"Телефон:",  font=self.font['h5']).place(x=70, y=180)
-        CTkLabel(self.personal_account, text=f"{self.user_data['telephone']}",  font=self.font['p']).place(x=150, y=180)
+        CTkLabel(self.personal_account, text=f"{self.user_data.get('telephone', 'Не указано')}",  font=self.font['p']).place(x=150, y=180)
 
         CTkLabel(self.personal_account, text=f"Паспорт:",  font=self.font['h5']).place(x=70, y=210)
-        CTkLabel(self.personal_account, text=f"{self.user_data['passport_number']}",  font=self.font['p']).place(x=150, y=210)
+        CTkLabel(self.personal_account, text=f"{self.user_data.get('passport_number', 'Не указано')}",  font=self.font['p']).place(x=150, y=210)
 
         CTkLabel(self.personal_account, text=f"Кол-во счетов:", font=self.font['h5']).place(x=70, y=240)
-        CTkLabel(self.personal_account, text=f"{len(self.user_data['cards'])}",  font=self.font['p']).place(x=180, y=240)
-
+        CTkLabel(self.personal_account, text=f"{len(self.user_data.get('cards', []))}",  font=self.font['p']).place(x=180, y=240)
 
         CTkButton(self.personal_account, text="Выход", fg_color="red", hover_color="pink", command=self.app.quit).place(x=280, y=210)
 
         CTkButton(self.personal_account, text="Выйти из аккаунта", hover_color="pink", fg_color="red", command=self.quit_account_proccesing).place(x=280, y=240)
-
 
         CTkLabel(self.personal_account, text=f"Наши офисы: ",  font=self.font['h2']).place(x=70, y=330)
         self.map_widget = TkinterMapView( self.personal_account, width=370, height=250, corner_radius=0)
@@ -126,7 +140,6 @@ class GUIManager:
         self.map_widget.place(x=70, y=360)
         self.map_widget.set_marker(53.847624, 27.481477, text="Наш офис")
         self.map_widget.zoom_delta = 0.1
-
 
     def start_registration(self, name, surname, passport_number, passport, phone, password):
         def run():
@@ -143,7 +156,16 @@ class GUIManager:
         threading.Thread(target=run, daemon=True).start()
 
     def success_auth(self):
-        self.update_user_data()
+        def run():
+            try:
+                self.update_user_data()
+                self.app.after(0, self._success_auth_ui)
+            except Exception as e:
+                self.app.after(0, self.open_popup, str(e))
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _success_auth_ui(self):
         self.tabview_unauth.destroy()
         self.authorizate_buid()
 
@@ -161,9 +183,6 @@ class GUIManager:
                 loop.close()
 
         threading.Thread(target=run, daemon=True).start()
-
-
-
 
     def non_authorizate_buid(self):
         #делаю без self, чтобы сборщик мусора удалил объекты после прохождения
