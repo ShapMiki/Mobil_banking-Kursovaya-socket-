@@ -5,6 +5,7 @@ import threading
 
 from communicate.client import client
 from communicate.service import *
+from tkintermapview import TkinterMapView
 
 
 class GUIManager:
@@ -23,16 +24,51 @@ class GUIManager:
         for i in self.font:
             self.font[i] = tuple(self.font[i])
 
+        self.user_data = {}
+
+    async def wait_connection(self, n=0):
+        try:
+            bool_check = check_auth()
+            return bool_check
+        except:
+            if n > 3:
+                return "offline"
+            await asyncio.sleep(1)
+            return await self.wait_connection(n+1)
+
+    async def asynsleep(self):
+        await asyncio.sleep(3)
+
     def main(self):
-        #TODO: Сделать проверку на авторизацию
-        #self.authorizate_buid()
-        self.non_authorizate_buid()
+        def check_connection_thread():
+            try:
+                bool_check = check_auth()
+            except Exception as e:
+                self.open_popup(e)
+                bool_check = asyncio.run(self.wait_connection())
+            
+            if bool_check == "offline":
+                self.app.after(0, self.open_popup, "Нет подключения к серверу, попробуйте позже")
+                asyncio.run(self.asynsleep())
+                self.app.quit()
+            if bool_check:
+                self.app.after(0, self.authorizate_buid)
+            else:
+                self.app.after(0, self.non_authorizate_buid)
+
+        connection_thread = threading.Thread(target=check_connection_thread, daemon=True)
+        connection_thread.start()
 
         self.app.mainloop()
 
-
+    def update_user_data(self):
+        try:
+            self.user_data = get_user_data()
+        except Exception as e:
+            self.open_popup(e)
 
     def authorizate_buid(self):
+        self.update_user_data()
         self.tabview = CTkTabview(self.app, anchor="s")
         self.tabview.pack(expand=True, fill='both')
 
@@ -40,9 +76,56 @@ class GUIManager:
         self.main_tab = self.tabview.add("Главная")
         self.personal_account = self.tabview.add("Кабинет")
 
+        self.build_payment_tab()
+        self.build_main_tab()
+        self.build_personal_account()
+
+
+    def build_payment_tab(self):
+        #TODO: построить вкладку платежей
+        pass
+
+    def build_main_tab(self):
+        pass
+
+    def quit_account_proccesing(self):
+        quit_account()
+        self.app.after(0, self.tabview.destroy)
+        self.app.after(0, self.non_authorizate_buid)
 
 
 
+    def build_personal_account(self):
+        CTkLabel(self.personal_account, text="Личный кабинет", font=self.font['h1']).place(x=self.width*0.33, y=50)
+
+        CTkLabel(self.personal_account, text=f"Имя:",  font=self.font['h5']).place(x=70, y=120)
+        CTkLabel(self.personal_account, text=f"{self.user_data['name']}", font=self.font['p']).place(x=150, y=120)
+
+        CTkLabel(self.personal_account, text=f"Фамилия:",  font=self.font['h5']).place(x=70, y=150)
+        CTkLabel(self.personal_account, text=f"{self.user_data['surname']}", font=self.font['p']).place(x=150, y=150)
+
+        CTkLabel(self.personal_account, text=f"Телефон:",  font=self.font['h5']).place(x=70, y=180)
+        CTkLabel(self.personal_account, text=f"{self.user_data['telephone']}",  font=self.font['p']).place(x=150, y=180)
+
+        CTkLabel(self.personal_account, text=f"Паспорт:",  font=self.font['h5']).place(x=70, y=210)
+        CTkLabel(self.personal_account, text=f"{self.user_data['passport_number']}",  font=self.font['p']).place(x=150, y=210)
+
+        CTkLabel(self.personal_account, text=f"Кол-во счетов:", font=self.font['h5']).place(x=70, y=240)
+        CTkLabel(self.personal_account, text=f"{len(self.user_data['cards'])}",  font=self.font['p']).place(x=180, y=240)
+
+
+        CTkButton(self.personal_account, text="Выход", fg_color="red", hover_color="pink", command=self.app.quit).place(x=280, y=210)
+
+        CTkButton(self.personal_account, text="Выйти из аккаунта", hover_color="pink", fg_color="red", command=self.quit_account_proccesing).place(x=280, y=240)
+
+
+        CTkLabel(self.personal_account, text=f"Наши офисы: ",  font=self.font['h2']).place(x=70, y=330)
+        self.map_widget = TkinterMapView( self.personal_account, width=370, height=250, corner_radius=0)
+        self.map_widget.set_position(53.847624, 27.481477)
+        self.map_widget.set_zoom(15)
+        self.map_widget.place(x=70, y=360)
+        self.map_widget.set_marker(53.847624, 27.481477, text="Наш офис")
+        self.map_widget.zoom_delta = 0.1
 
 
     def start_registration(self, name, surname, passport_number, passport, phone, password):
@@ -51,7 +134,7 @@ class GUIManager:
             asyncio.set_event_loop(loop)
             try:
                 loop.run_until_complete(registration(name, surname, passport_number, passport, phone, password))
-                self.app.after(0, self.success_registration)
+                self.app.after(0, self.success_auth)
             except Exception as e:
                 self.app.after(0, self.open_popup, str(e))
             finally:
@@ -59,9 +142,10 @@ class GUIManager:
 
         threading.Thread(target=run, daemon=True).start()
 
-    def success_registration(self):
+    def success_auth(self):
+        self.update_user_data()
         self.tabview_unauth.destroy()
-        asyncio.create_task(self.authorizate_buid())
+        self.authorizate_buid()
 
     def login(self, phone, password):
         def run():
@@ -70,7 +154,7 @@ class GUIManager:
             try:
                 answer = loop.run_until_complete(login(phone, password))
                 if answer:
-                    self.app.after(0, self.success_login)
+                    self.app.after(0, self.success_auth)
             except Exception as e:
                 self.app.after(0, self.open_popup, str(e))
             finally:
@@ -78,9 +162,7 @@ class GUIManager:
 
         threading.Thread(target=run, daemon=True).start()
 
-    def success_login(self):
-        self.tabview_unauth.destroy()
-        asyncio.create_task(self.authorizate_buid())
+
 
 
     def non_authorizate_buid(self):
@@ -128,14 +210,15 @@ class GUIManager:
 
         ).place(x=self.width * 0.36, y=550)
 
-    def open_popup(self, text):
+    def open_popup(self, e):
+        text = str(e)
         # Создание всплывающего окна в главном потоке
         self.app.after(0, self._open_popup, text)
 
     def _open_popup(self, text):
         popup = CTkToplevel(self.app)
         popup.title("Ошибка")
-        popup.geometry("300x200")
+        popup.geometry("400x200")
 
         CTkLabel(popup, text=text, anchor="center").pack(pady=20)
 

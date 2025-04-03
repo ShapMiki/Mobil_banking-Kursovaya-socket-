@@ -3,9 +3,38 @@ from json import load, dump
 
 
 
+def quit_account():
+    with open("data/server_config.json", "r") as json_file:
+        config = load(json_file)
+
+    config['JWT'] = None
+    config["key"] = None
+
+    with open("data/server_config.json", "w") as json_file:
+        dump(config, json_file)
+
+    client.update_json()
+
+def check_auth():
+    answer = client.post('check_auth', {})
+    try:
+         client.update_jwt(answer['data']['JWT'])
+    except KeyError:
+        return False
+    return True
+
+def get_user_data():
+    user_data = client.post("get_user_data_api", {})['data']
+    #with open("data/user_data.json", "w", encoding="utf-8") as json_file:
+    #    dump(user_data, json_file, ensure_ascii=False, indent=4)
+    return user_data
+
 async def login(phone, password):
-    answer = await client.post('login', {
-        'phone': phone,
+    if not phone or not password:
+        raise ValueError('Все поля должны быть заполнены')
+
+    answer =  client.post('login', {
+        'telephone': phone,
         'password': password
     })
 
@@ -13,8 +42,8 @@ async def login(phone, password):
        config = load(json_file)
 
     try:
-        config['JWT'] = answer['JWT']
-        config["key"] = answer["key"]
+        config['JWT'] = answer['data']['JWT']
+        config["key"] = answer['data']["key"]
     except KeyError:
         raise ConnectionAbortedError('Неверный логин или пароль')
     with open("data/server_config.json", "w") as json_file:
@@ -33,7 +62,7 @@ async def registration(name, surname, passport_number, passport, phone, password
         raise ValueError('Имя и фамилия должны быть длиннее 3 символов')
 
     if len(passport) != 14:
-        raise ValueError('Номер паспорта должен быть 14 символов')
+        raise ValueError('ID паспорта должен быть 14 символов')
     if len(passport_number) != 9:
         raise ValueError('Номер паспорта должен быть 9 символов')
 
@@ -44,21 +73,21 @@ async def registration(name, surname, passport_number, passport, phone, password
     if len(phone) != 13:
         raise ValueError('Номер телефона должен быть 13 символов')
 
-    answer = await client.post('registration', {
-        'name': name.get(),
-        'surname': surname.get(),
-        'passport_number': passport_number.get(),
-        'passport': passport.get(),
-        'phone': phone.get(),
-        'password': password.get()
+    answer =  client.post('registration', {
+        'name': name,
+        'surname': surname,
+        'passport_number': passport_number,
+        'passport_id': passport,
+        'telephone': phone,
+        'password': password
     })
 
 
     with open("data/server_config.json", "r") as json_file:
        config = load(json_file)
 
-    config['JWT'] = answer['JWT']
-    config["key"] = answer["key"]
+    config['JWT'] = answer['data']['JWT']
+    config["key"] = answer['data']["key"]
 
     with open("data/server_config.json", "w") as json_file:
         dump(config, json_file)

@@ -2,9 +2,10 @@
         "font":{
             "p": ["Roboto", 13],
             "h1": ["Roboto", 20, "bold"],
-            "h2": ["Roboto", 18],
-            "h3": ["Roboto", 16],
-            "h4": ["Roboto", 14]
+            "h2": ["Roboto", 18 , "bold"],
+            "h3": ["Roboto", 16, "bold"],
+            "h4": ["Roboto", 14, "bold"],
+            "h5": ["Roboto", 13, "bold"]
         },
         "theme": "system",
         "cards": [],

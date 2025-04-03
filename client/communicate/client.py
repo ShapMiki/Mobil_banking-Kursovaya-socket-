@@ -1,11 +1,9 @@
 import socket
+import base64
 
 from cryptography.fernet import Fernet
 from json import loads, dumps, load, dump
 from time import sleep
-
-
-
 
 
 class Client:
@@ -19,18 +17,23 @@ class Client:
             with open("data/server_config.json", "w") as json_file:
                 dump(self.config, json_file)
 
+
         self.sock = socket.socket()
-        print(self.config)
+
         try:
             self.sock.connect((self.config["host"], self.config["port"]))
         except:
             pass #raise ConnectionError("нет подключения, Попробуйте позже")
 
         try:
-            self.personal_key = self.config["key"].encode()
+            self.personal_key = base64.b64decode(self.config["key"])
         except:
-            self.personal_key = ""
-        self.server_key = self.config["server_key"].encode()
+            self.personal_key = None
+
+        try:
+            self.server_key =b"3nBGTLyXjpz_X-CLFtkEVnm6TdwoX2Igm_3wll1JLek="
+        except:
+            raise ValueError("Некорректный ключ")
 
 
         self.header_pattern = {
@@ -45,14 +48,24 @@ class Client:
         with open("data/server_config.json", "r") as json_file:
             self.config = load(json_file)
 
-    async def reconnect(self):
+    def update_jwt(self, jwt):
+        self.config["JWT"] = jwt
+        with open("data/server_config.json", "w") as json_file:
+            dump(self.config, json_file)
+
+        self.header_pattern['JWT'] = jwt
+
+    def reconnect(self):
         try:
+            self.sock.close()
+            self.sock = socket.socket()
             self.sock.connect((self.config["host"], self.config["port"]))
+            sleep(0.5)
             return True
         except:
              return False
 
-    async def get(self, route, data) -> dict:
+    def get(self, route, data: dict = {"details": "No data"}) -> dict:
         try:
             headers = self.header_pattern.copy()
             headers['method'] = 'get'
@@ -60,8 +73,8 @@ class Client:
             request = {'headers': headers, 'data': data}
             self.sock.send(dumps(request).encode())
         except:
-            if await self.reconnect():
-                return await self.get(route, data)
+            if  self.reconnect():
+                return  self.get(route, data)
             else:
                 raise ConnectionError("нет подключения, Попробуйте позже")
 
@@ -71,25 +84,27 @@ class Client:
         self.check_answer(answer)
         return answer
 
-    async def post(self, route, data) -> None:
+    def post(self, route, data: dict = {"details": "No data"}) -> None:
         try:
-            data = self.encryption(self.server_key, data)
+            encrypt_data = self.encryption(self.server_key, data)
 
             headers = self.header_pattern.copy()
             headers['method'] = 'post'
             headers['route'] = route
 
-            request = {'headers': headers, 'data': data}
+            request = {'headers': headers, 'data': encrypt_data}
+
             self.sock.send(dumps(request).encode())
-        except:
-            if await self.reconnect():
-                return await self.post(route, data)
+        except OSError:
+            if self.reconnect():
+                return self.post(route, data)
             else:
                 raise ConnectionError("нет подключения")
 
         answer = self.sock.recv(1024)
         answer = loads(answer.decode())
 
+        print(answer)
         if not 200 <= answer["status"] <= 299:
             details = ""
             if answer['details']:
@@ -98,22 +113,23 @@ class Client:
 
         answer['data'] = self.decryption(self.server_key, answer['data'])
 
+        print(answer)
         return answer
 
 
-    async def security_post(self, route, data):
+    def security_post(self, route, data):
         try:
-            data = self.encryption(self.personal_key, data)
+            encryption_data = self.encryption(self.personal_key, data)
 
             headers = self.header_pattern.copy()
             headers['method'] = 'SECURITY_POST'
             headers['route'] = route
 
-            request = {'headers': headers, 'data': data}
+            request = {'headers': headers, 'data': encryption_data}
             self.sock.send(dumps(request).encode())
         except:
-            if await self.reconnect():
-                return await self.security_post(route, data)
+            if self.reconnect():
+                return self.security_post(route, data)
             else:
                 raise ConnectionError("нет подключения")
 
@@ -142,12 +158,15 @@ class Client:
         json_data = dumps(data).encode()
         encrypted_data = cipher_suite.encrypt(json_data)
 
-        return encrypted_data
+        return base64.b64encode(encrypted_data).decode()
 
     def decryption(self, key, data):
         cipher_suite = Fernet(key)
-        decrypted_data = cipher_suite.decrypt(data['data'])
-        data = {**data, **loads(decrypted_data.decode())}
+
+        encrypted_data = base64.b64decode(data)
+        decrypted_data = cipher_suite.decrypt(encrypted_data)
+
+        data =loads(decrypted_data.decode())
 
         return data
 
