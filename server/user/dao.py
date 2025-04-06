@@ -2,10 +2,20 @@ from dao.base import BaseDAO
 from modules.database import Session
 from user.models import User
 from sqlalchemy import select, insert, update
-
+from sqlalchemy.orm import joinedload
 
 class UsersDAO(BaseDAO):
     model = User
+
+    @classmethod
+    def find_one_or_none(cls, **kwargs):
+        with Session() as session:
+            query = select(cls.model).filter_by(**kwargs)
+
+            for relationship in cls.model.__mapper__.relationships:
+                query = query.options(joinedload(relationship))
+            result = session.execute(query)
+            return result.unique().scalar_one_or_none()
 
     @classmethod
     def update_balance(cls, id, ballance):

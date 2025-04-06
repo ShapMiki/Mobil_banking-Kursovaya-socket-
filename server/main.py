@@ -35,20 +35,19 @@ def processing_data(data):
         return {'status': 403, 'details': 'Forbidden. Need you ip'}
 
     try:
-        answer = functions[data['headers']['method']](data)                     #Испольнение запроса
-    except KeyError as e:
-        raise e
-        answer = {"status": 404, 'details': 'not found'}
+        answer = functions[data['headers']['method']](data)
+    except KeyError:
+        return {"status": 404, 'details': 'Method not found'}
     except Exception as e:
-        answer = {"status":500, "details": f"internal Serverv Error: {e}"}
-        raise e
-
+        print(f"Error processing request: {e}")
+        return {"status": 500, "details": f"Internal Server Error: {str(e)}"}
 
     if not 'status' in answer.keys():
         answer['status'] = 200
 
     answer = dumps(answer).encode()
     return answer
+
 
 
 def handle_client(conn):

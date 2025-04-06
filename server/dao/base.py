@@ -1,15 +1,15 @@
 from modules.database import Session
-
-from  sqlalchemy import select, insert
+from sqlalchemy import select, insert
+from sqlalchemy.orm import joinedload
 
 class BaseDAO:
     model = None
 
     @classmethod
-    def find_one_or_none(cls, **kwargs):
-        with Session() as session:
+    async def find_one_or_none(cls, **kwargs):
+        async with Session() as session:
             query = select(cls.model).filter_by(**kwargs)
-            result = session.execute(query)
+            result = await session.execute(query)
             return result.scalar_one_or_none()
 
     @classmethod
@@ -20,17 +20,25 @@ class BaseDAO:
 
     @classmethod
     def find_all(cls):
-         with Session() as session:
+        with Session() as session:
             query = select(cls.model)
-            cars = session.execute(query)
-            return cars.scalars().all()
+            # Загружаем все связанные отношения
+            for relationship in cls.model.__mapper__.relationships:
+                query = query.options(joinedload(relationship))
+            result = session.execute(query)
+            # Используем unique() для результатов с коллекциями
+            return result.unique().scalars().all()
 
     @classmethod
     def find_by_id(cls, user_id: int):
         with Session() as session:
             query = select(cls.model).filter_by(id=user_id)
+            # Загружаем все связанные отношения
+            for relationship in cls.model.__mapper__.relationships:
+                query = query.options(joinedload(relationship))
             result = session.execute(query)
-            return result.scalar_one_or_none()
+            # Используем unique() для результатов с коллекциями
+            return result.unique().scalar_one_or_none()
 
     @classmethod
     def create(cls, obj):

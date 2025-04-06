@@ -1,6 +1,7 @@
 from user.dao import UsersDAO
 from user.auth import get_password_hash, verify_password, authenticate_user, create_access_token, get_current_user
-
+from user.service import get_user_data
+from card.service import *
 
 router_dir = {
     'get': {},
@@ -24,6 +25,24 @@ def get_name(data):
 @router('post', 'get_balance')
 def get_balance(data):
     print(data)
+
+@router('post', 'create_product_api')
+def create_product_api(data):
+    user = get_current_user(data)
+    if not user:
+        return {"status": 401, "details": "Unauthorized"}
+    create_product_api(user, data['data'])
+
+
+
+@router('post', 'get_user_data_api')
+def get_user_data_api(data):
+    user = get_current_user(data)
+    if not user:
+        return {"status": 401, "details": "Unauthorized"}
+    user_data = get_user_data(user)
+    return user_data
+
 
 @router('post', 'check_auth')
 def check_auth(data):

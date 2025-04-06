@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Double, Computed, Date, ARRAY, DateTime
 from sqlalchemy.orm import relationship
+from random import randint
 
 from modules.database import Base
 from datetime import datetime, timedelta
@@ -24,6 +25,7 @@ class Card(Base):
     owner_card = Column(String, default="Incognit")
     valid_to = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=365*3))
     cvv = Column(Integer)
+    pin = Column(Integer, default=randint(1000,9999))
 
     # Связь "многие к одному" с User
     owner = relationship('User', back_populates='cards')
