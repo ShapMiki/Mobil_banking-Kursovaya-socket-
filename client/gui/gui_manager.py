@@ -174,8 +174,9 @@ class GUIManager:
         CTkLabel(self.fin_wind, text="Я согласен с политикой пользования", font=self.font['litp']).place(x=self.width*0.25, y=590)
         is_agree2 = CTkCheckBox(self.fin_wind, text="", font=self.font['h5'])
         is_agree2.place(x=self.width*0.75, y=590)
-        CTkButton(self.fin_wind, text="Создать",
+        CTkButton(self.fin_wind,
                   command=lambda : self.fin_proccesing(product_type, is_named_product, currency, is_agree1, is_agree2),
+                  text="Создать"
                   ).place(x=self.width*0.35, y=630)
 
         # Модальное поведение (блокирует фон до закрытия)
