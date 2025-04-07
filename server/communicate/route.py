@@ -31,7 +31,7 @@ def create_product_api(data):
     user = get_current_user(data)
     if not user:
         return {"status": 401, "details": "Unauthorized"}
-    create_product_api(user, data['data'])
+    add_product(user, data['data'])
 
 
 
@@ -41,6 +41,7 @@ def get_user_data_api(data):
     if not user:
         return {"status": 401, "details": "Unauthorized"}
     user_data = get_user_data(user)
+    print(user_data)
     return user_data
 
 

@@ -39,6 +39,7 @@ def processing_data(data):
     except KeyError:
         return {"status": 404, 'details': 'Method not found'}
     except Exception as e:
+        raise e  # TODO: для отладки
         print(f"Error processing request: {e}")
         return {"status": 500, "details": f"Internal Server Error: {str(e)}"}
 
@@ -54,7 +55,7 @@ def handle_client(conn):
     conn.settimeout(CONNECTION_TIMEOUT)
     while True:
         try:
-            data = conn.recv(2048)
+            data = conn.recv(16384)
 
             if not data:
                 continue

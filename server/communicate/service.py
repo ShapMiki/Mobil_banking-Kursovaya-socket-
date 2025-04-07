@@ -34,6 +34,7 @@ class Proccessing:
 
 
         except Exception as e:
+            raise e #TODO: для отладки
             print(f"Unexpected error in post: {e}")
             return {"status": 500, "details": f"Internal server error: {str(e)}"}
 
