@@ -78,7 +78,7 @@ class Client:
             else:
                 raise ConnectionError("нет подключения, Попробуйте позже")
 
-        answer = self.sock.recv(1024)
+        answer = self.sock.recv(16384)
         answer = loads(answer.decode())
 
         self.check_answer(answer)
@@ -101,7 +101,7 @@ class Client:
             else:
                 raise ConnectionError("нет подключения")
 
-        answer = self.sock.recv(1024)
+        answer = self.sock.recv(16384)
         answer = loads(answer.decode())
 
         print(answer)

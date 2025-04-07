@@ -1,7 +1,18 @@
 from communicate.client import client
 from json import load, dump
+import asyncio
 
+def  transfer_service(card_number, adr, sum, transfer_type):
+    print("DKAODKFOPKFPOKFOPFK")
 
+def create_product(product_type, is_named_product, currency):
+    data = {
+        'product_type': product_type,
+        'is_named_product': is_named_product,
+        'currency': currency
+    }
+    task = client.post('create_product_api', data)
+    print(task)
 
 def quit_account():
     with open("data/server_config.json", "r") as json_file:
