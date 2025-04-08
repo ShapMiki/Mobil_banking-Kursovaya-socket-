@@ -24,24 +24,25 @@ def processing_data(data):
     print(data)
 
     if not ('headers' in data or 'data' in data):
-        return {"status": 400, "details": "bad request"}
+        answer =  {"status": 400, "details": "bad request"}
 
     if not data['headers']['config_version'] == settings.config_version:
-        return {"status": 421,  'details': "You need to update app"}
+        answer =  {"status": 421,  'details': "You need to update app"}
 
     try:
         print(f"\nlog: {datetime.now().strftime('%H:%M:%S %d.%m.%Y')} \nip:{data['headers']['ip']}\n")
     except KeyError:
-        return {'status': 403, 'details': 'Forbidden. Need you ip'}
+        answer =  {'status': 403, 'details': 'Forbidden. Need you ip'}
 
     try:
         answer = functions[data['headers']['method']](data)
-    except KeyError:
-        return {"status": 404, 'details': 'Method not found'}
+    except KeyError as e:
+        raise e  # TODO: для отладки
+        answer =  {"status": 404, 'details': 'Method not found'}
     except Exception as e:
         raise e  # TODO: для отладки
         print(f"Error processing request: {e}")
-        return {"status": 500, "details": f"Internal Server Error: {str(e)}"}
+        answer =  {"status": 500, "details": f"Internal Server Error: {str(e)}"}
 
     if not 'status' in answer.keys():
         answer['status'] = 200
@@ -62,6 +63,7 @@ def handle_client(conn):
 
             conn.settimeout(CONNECTION_TIMEOUT)
             answer = processing_data(data)
+            print("23432",answer)
             conn.send(answer)
 
         except socket.timeout:

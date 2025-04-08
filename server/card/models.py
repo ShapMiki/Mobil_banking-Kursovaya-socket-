@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Double, Computed, Date, ARRAY, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Double, Computed, Date, ARRAY, DateTime, Numeric
 from sqlalchemy.orm import relationship
 from random import randint
 
@@ -18,7 +18,7 @@ class Card(Base):
 
     type = Column(String, nullable=False)  # Счет, копилка, дебитовая карта, кредитная карта
     currency = Column(String, default="BYN")
-    balance = Column(Double, default=0)
+    balance = Column(Numeric(precision=20, scale=10), default=0)
     create_at = Column(DateTime, default=datetime.utcnow)
 
     card_number = Column(String, unique=True, nullable=False)

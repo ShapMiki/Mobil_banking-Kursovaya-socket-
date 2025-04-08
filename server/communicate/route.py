@@ -21,6 +21,13 @@ def get_name(data):
     print(data)
 
 
+@router('post', 'transfer_money_api')
+def transfer_money_api(data):
+    user = get_current_user(data)
+    if not user:
+        return {"status": 401, "details": "Unauthorized"}
+    answer =transfer_money(user, data['data'])
+    return answer
 
 @router('post', 'get_balance')
 def get_balance(data):
