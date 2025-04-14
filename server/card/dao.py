@@ -44,7 +44,13 @@ class CardDAO(BaseDAO):
                 adr = data['adr']
                 card_number = data['card_number']
                 transfer_type = data['transfer_type']
-                amount = Decimal(data['sum'])
+                try:
+                    amount = Decimal(data['sum'])
+                except:
+                    return {"status": 400, "details": "Неверная сумма"}
+
+                if amount < 0.1:
+                    return {"status": 400, "details": "Слишком маленький перевод"}
 
                 # Проверка, привязан ли пользователь к сессии
                 if not inspect(user).persistent:

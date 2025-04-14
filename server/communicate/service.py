@@ -30,6 +30,10 @@ class Proccessing:
             encrypted_data = Proccessing.encryption(Proccessing.server_key, answer)
             responce = {'data': encrypted_data}
 
+            if answer['details'] and answer['status']:
+                responce["status"] = answer['status']
+                responce['details'] = answer['details']
+
             return responce
 
 
@@ -50,32 +54,6 @@ class Proccessing:
             return answer
         except Exception as e:
             print(f"Error in get: {e}")
-            return {"status": 500, "details": f"Internal server error: {str(e)}"}
-
-    @staticmethod
-    def security_post(data) -> dict:
-        try:
-            routers = router_dir['SECURITY_POST']
-            if data['route'] not in routers:
-                return {"status": 404, "details": "Route not found"}
-
-            # Расшифровка
-            try:
-                data = Proccessing.decryption(data)
-            except Exception as e:
-                print(f"Error decrypting data: {e}")
-                return {"status": 400, "details": "Failed to decrypt data"}
-
-            # Действие
-            try:
-                answer = routers[data['route']](data)
-                return answer
-            except Exception as e:
-                print(f"Error processing route: {e}")
-                return {"status": 500, "details": f"Error processing request: {str(e)}"}
-
-        except Exception as e:
-            print(f"Unexpected error in security_post: {e}")
             return {"status": 500, "details": f"Internal server error: {str(e)}"}
 
     @staticmethod
