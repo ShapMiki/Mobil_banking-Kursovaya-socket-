@@ -207,9 +207,11 @@ class GUIManager:
                     raise ValueError("Неверный номер телефона")
                 if transfer_type == "Номеру карты" and len(adr) != 16:
                     raise ValueError("Неверный номер карты")
-                transfer_service(card_number, adr, sum, transfer_type)
+                answer = transfer_service(card_number, adr, sum, transfer_type)
+                self.open_popup(answer, "Уведомление")
                 self.card_wind.destroy()
             except Exception as e:
+                raise e
                 self.open_popup(e)
 
         def delete_card(card_number):
@@ -440,14 +442,14 @@ class GUIManager:
 
         ).place(x=self.width * 0.36, y=550)
 
-    def open_popup(self, e):
+    def open_popup(self, e, tittle="Ошибка"):
         text = str(e)
         # Создание всплывающего окна в главном потоке
-        self.app.after(0, self._open_popup, text)
+        self.app.after(0, self._open_popup, text, tittle)
 
-    def _open_popup(self, text):
+    def _open_popup(self, text, tittle="Ошибка"):
         popup = CTkToplevel(self.app)
-        popup.title("Ошибка")
+        popup.title(tittle)
         popup.geometry("400x200")
 
         CTkLabel(popup, text=text, anchor="center").pack(pady=20)
