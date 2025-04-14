@@ -95,8 +95,9 @@ class GUIManager:
         self.personal_account = self.tabview.add("Кабинет")
 
         self.build_payment_tab()
-        self.build_main_tab()
         self.build_personal_account()
+        self.build_main_tab()
+
 
 
     def build_payment_tab(self):
@@ -207,7 +208,8 @@ class GUIManager:
                     raise ValueError("Неверный номер телефона")
                 if transfer_type == "Номеру карты" and len(adr) != 16:
                     raise ValueError("Неверный номер карты")
-                transfer_service(card_number, adr, sum, transfer_type)
+                answer = transfer_service(card_number, adr, sum, transfer_type)
+                self.open_popup(answer, "Уведомление")
                 self.card_wind.destroy()
             except Exception as e:
                 self.open_popup(e)
@@ -274,6 +276,13 @@ class GUIManager:
 
         self.card_wind.grab_set()
 
+    def refresh_main_tab(self):
+        # Clear all widgets in the main_tab
+        for widget in self.main_tab.winfo_children():
+            widget.destroy()
+        # Update user data and rebuild the tab
+        self.update_user_data()
+        self.build_main_tab()
 
     def build_main_tab(self):
         CTkLabel(self.main_tab, text="Мои продукты", font=self.font['h1']).place(x=self.width*0.35, y=20)
@@ -311,6 +320,7 @@ class GUIManager:
             ).place(x=65, y=72)
             CTkButton(card_frame, text="Открыть", width=5, command=partial(self.on_card_click, card)).place(x=10, y=68)
             card_frame.place(x=40 + 220*(i%2), y=130 + 110*(i//2))
+        self.main_tab.after(15000, self.refresh_main_tab)
 
     def quit_account_proccesing(self):
         quit_account()
@@ -440,14 +450,14 @@ class GUIManager:
 
         ).place(x=self.width * 0.36, y=550)
 
-    def open_popup(self, e):
+    def open_popup(self, e, title = 'Ошибка'):
         text = str(e)
         # Создание всплывающего окна в главном потоке
-        self.app.after(0, self._open_popup, text)
+        self.app.after(0, self._open_popup, text, title)
 
-    def _open_popup(self, text):
+    def _open_popup(self, text, title):
         popup = CTkToplevel(self.app)
-        popup.title("Ошибка")
+        popup.title(title)
         popup.geometry("400x200")
 
         CTkLabel(popup, text=text, anchor="center").pack(pady=20)

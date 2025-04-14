@@ -3,7 +3,14 @@ from json import load, dump
 import asyncio
 
 def  transfer_service(card_number, adr, sum, transfer_type):
-    print("DKAODKFOPKFPOKFOPFK")
+    data = {
+        'card_number': card_number,
+        "transfer_type": transfer_type,
+        'adr': adr,
+        'sum': sum
+    }
+    answer = client.post('transfer_money_api', data)
+    return answer["data"]['details']
 
 def create_product(product_type, is_named_product, currency):
     data = {
