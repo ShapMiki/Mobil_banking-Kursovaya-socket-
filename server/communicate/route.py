@@ -20,6 +20,10 @@ def router(method, route):
 def get_name(data):
     print(data)
 
+@router('get', 'currency_api')
+def get_currency(data):
+    print(data)
+    return {"status": 200, "details": "USD", "currency": "USD"}
 
 @router('post', 'transfer_money_api')
 def transfer_money_api(data):
