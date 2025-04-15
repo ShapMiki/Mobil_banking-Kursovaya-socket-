@@ -100,8 +100,45 @@ class GUIManager:
 
 
     def build_payment_tab(self):
-        #TODO: построить вкладку платежей
-        pass
+        def get_curent_currency():
+            try:
+                currency = get_currency()
+                usd_cur_label.config(text=f"{currency['USD']['buy']:>10.2f}      {currency['USD']['sell']:>10.2f}")
+                eur_cur_label.config(text=f"{currency['EUR']['buy']:>10.2f}      {currency['EUR']['sell']:>10.2f}")
+                rub_cur_label.config(text=f"{currency['RUB']['buy']:>10.2f}      {currency['RUB']['sell']:>10.2f}")
+                shd_cur_label.config(text=f"{currency['SHD']['buy']:>10.2f}      {currency['SHD']['sell']:>10.2f}")
+            except Exception as e:
+                self.open_popup(e)
+                return
+
+        currency_frame = CTkFrame(self.payment_tab, width=400, height=500)
+        currency_frame.place(x=60, y=80)
+        CTkLabel(currency_frame, text="Курсы валют:", font=self.font['h3']).place(x=10, y=10)
+        CTkLabel(currency_frame, text="Валюта      Покупка      Продажа", font=self.font["h5"]).place(x=10, y=40)
+
+        CTkLabel(currency_frame, text="USD: ", font=self.font["h5"]).place(x=10, y=60)
+        usd_cur_label = CTkLabel(currency_frame, text=f"{0.00:>10.2f}      {0.00:>10.2f}", font=self.font["h5"])
+        usd_cur_label.place(x=80, y=60)
+
+        CTkLabel(currency_frame, text="EUR: ", font=self.font["h5"]).place(x=10, y=80)
+        eur_cur_label = CTkLabel(currency_frame, text=f"{0.00:>10.2f}      {0.00:>10.2f}", font=self.font["h5"])
+        eur_cur_label.place(x=80, y=80)
+
+        CTkLabel(currency_frame, text="RUB: ", font=self.font["h5"]).place(x=10, y=100)
+        rub_cur_label = CTkLabel(currency_frame, text=f"{0.00:>10.2f}      {0.00:>10.2f}", font=self.font["h5"])
+        rub_cur_label.place(x=80, y=100)
+
+        CTkLabel(currency_frame, text="SHD: ", font=self.font["h5"]).place(x=10, y=120)
+        shd_cur_label = CTkLabel(currency_frame, text=f"{0.00:>10.2f}      {0.00:>10.2f}", font=self.font["h5"])
+        shd_cur_label.place(x=80, y=120)
+
+        CTkButton(self.payment_tab,
+                  text="обновить",
+                  width=10,
+                  command=lambda: threading.Thread(target=get_curent_currency, daemon=True).start()
+                  ).place(x=220, y=90)
+
+        threading.Thread(target=get_curent_currency, daemon=True).start()
 
     def fin_proccesing(self, product_type, is_named_product, currency, is_agree1, is_agree2):
         if not (is_agree1.get() and is_agree2.get()):

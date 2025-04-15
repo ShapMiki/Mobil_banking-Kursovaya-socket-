@@ -2,6 +2,11 @@ from communicate.client import client
 from json import load, dump
 import asyncio
 
+def get_currency():
+    answer = client.get('currency_api')
+    return answer["data"]['details']
+
+
 def  transfer_service(card_number, adr, sum, transfer_type):
     data = {
         'card_number': card_number,

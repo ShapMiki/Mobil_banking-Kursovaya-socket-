@@ -1,3 +1,9 @@
+#my
+.idea/
+myvenv/
+__pycache__/
+server_config.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
