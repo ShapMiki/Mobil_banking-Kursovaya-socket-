@@ -30,7 +30,7 @@ class Proccessing:
             encrypted_data = Proccessing.encryption(Proccessing.server_key, answer)
             responce = {'data': encrypted_data}
 
-            if answer['details'] and answer['status']:
+            if  'details'  and 'status' in answer.keys():
                 responce["status"] = answer['status']
                 responce['details'] = answer['details']
 
