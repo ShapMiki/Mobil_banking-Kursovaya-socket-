@@ -2,6 +2,8 @@ from communicate.client import client
 from json import load, dump
 import asyncio
 
+
+
 def get_currency():
     answer = client.get('currency_api')
     try:
@@ -49,6 +51,8 @@ def quit_account():
 
     config['JWT'] = None
     config["key"] = None
+    client.config['JWT'] = None
+    client.config["key"] = None
 
     with open("data/server_config.json", "w") as json_file:
         dump(config, json_file)
@@ -58,7 +62,7 @@ def quit_account():
 def check_auth():
     try:
         answer = client.post('check_auth', {})
-    except Exception as e:
+    except ConnectionError:
         return False
 
     try:
@@ -68,7 +72,11 @@ def check_auth():
     return True
 
 def get_user_data():
-    user_data = client.post("get_user_data_api", {})['data']
+    answer = client.post("get_user_data_api", {})
+    try:
+        user_data = answer['data']
+    except KeyError:
+        return answer['details']
     #with open("data/user_data.json", "w", encoding="utf-8") as json_file:
     #    dump(user_data, json_file, ensure_ascii=False, indent=4)
     return user_data
@@ -77,7 +85,7 @@ async def login(phone, password):
     if not phone or not password:
         raise ValueError('Все поля должны быть заполнены')
 
-    answer =  client.post('login', {
+    answer = client.post('login', {
         'telephone': phone,
         'password': password
     })
@@ -86,10 +94,14 @@ async def login(phone, password):
        config = load(json_file)
 
     try:
-        config['JWT'] = answer['data']['JWT']
+        jwt_token = answer['data']['JWT']
+        config['JWT'] = jwt_token
         config["key"] = answer['data']["key"]
+        # Обновляем JWT в клиенте
+        client.update_jwt(jwt_token)
     except KeyError:
         raise ConnectionAbortedError('Неверный логин или пароль')
+    
     with open("data/server_config.json", "w") as json_file:
         dump(config, json_file)
 
@@ -117,7 +129,7 @@ async def registration(name, surname, passport_number, passport, phone, password
     if len(phone) != 13:
         raise ValueError('Номер телефона должен быть 13 символов')
 
-    answer =  client.post('registration', {
+    answer = client.post('registration', {
         'name': name,
         'surname': surname,
         'passport_number': passport_number,
@@ -126,12 +138,14 @@ async def registration(name, surname, passport_number, passport, phone, password
         'password': password
     })
 
-
     with open("data/server_config.json", "r") as json_file:
        config = load(json_file)
 
-    config['JWT'] = answer['data']['JWT']
+    jwt_token = answer['data']['JWT']
+    config['JWT'] = jwt_token
     config["key"] = answer['data']["key"]
+    # Обновляем JWT в клиенте
+    client.update_jwt(jwt_token)
 
     with open("data/server_config.json", "w") as json_file:
         dump(config, json_file)

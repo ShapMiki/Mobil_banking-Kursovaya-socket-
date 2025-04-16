@@ -115,11 +115,12 @@ class Client:
         answer = loads(answer.decode())
 
         print(answer)
-        if not 200 <= answer["status"] <= 299:
+        if not 200 <= answer["status"] <= 399:
             details = ""
             if answer['details']:
                 details = answer['details']
             raise ConnectionError(details)
+            #return {"status": answer["status"], "details": details}
 
         answer['data'] = self.decryption(self.server_key, answer['data'])
 

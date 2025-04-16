@@ -76,14 +76,14 @@ class GUIManager:
                 bool_check = asyncio.run(self.wait_connection())
 
 
-            if bool_check == "offline":
-                self.app.after(0,self.chenge_conect)
+                if bool_check == "offline":
+                    self.app.after(0,self.chenge_conect)
 
 
             if bool_check:
-                self.app.after(0, self.authorizate_buid)
+                    self.app.after(0, self.authorizate_buid)
             else:
-                self.app.after(0, self.non_authorizate_buid)
+                    self.app.after(0, self.non_authorizate_buid)
 
 
         connection_thread = threading.Thread(target=check_connection_thread, daemon=True)
@@ -394,8 +394,8 @@ class GUIManager:
 
     def quit_account_proccesing(self):
         quit_account()
-        self.app.after(0, self.tabview.destroy)
-        self.app.after(0, self.non_authorizate_buid)
+        self.user_data = {}
+        self.app.quit()
 
     def build_personal_account(self):
         print("Построение личного кабинета, данные:", self.user_data)  # Отладочная информация
@@ -422,7 +422,7 @@ class GUIManager:
 
         CTkButton(self.personal_account, text="Выход", fg_color="red", hover_color="pink", command=self.app.quit).place(x=280, y=210)
 
-        CTkButton(self.personal_account, text="Выйти из аккаунта", hover_color="pink", fg_color="red", command=self.quit_account_proccesing).place(x=280, y=240)
+        CTkButton(self.personal_account, text="Выйти из аккаунта \nи выйти", hover_color="pink", fg_color="red", command=self.quit_account_proccesing).place(x=280, y=240)
 
         CTkLabel(self.personal_account, text=f"Наши офисы: ",  font=self.font['h2']).place(x=70, y=330)
         self.map_widget = TkinterMapView( self.personal_account, width=370, height=250, corner_radius=0)
@@ -449,8 +449,12 @@ class GUIManager:
     def success_auth(self):
         def run():
             try:
-                self.app.after(20, self.update_user_data)
-                self.app.after(40, self._success_auth_ui)
+                # Даем время на сохранение токена
+                time.sleep(0.5)
+                # Обновляем конфигурацию клиента
+                client.update_json()
+                self.app.after(0, self.update_user_data)
+                self.app.after(100, self._success_auth_ui)
             except Exception as e:
                 self.app.after(0, self.open_popup, str(e))
 
