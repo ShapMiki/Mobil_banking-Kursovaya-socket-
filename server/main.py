@@ -39,13 +39,15 @@ def processing_data(data):
             answer = functions[data['headers']['method']](data)
         except KeyError as e:
             raise e  # TODO: для отладки
-            answer =  {"status": 404, 'details': 'Method not found'}
+            return dumps( {"status": 404, 'details': 'Method not found'}).encode()
         except Exception as e:
             raise e  # TODO: для отладки
             print(f"Error processing request: {e}")
-            answer =  {"status": 501, "details": f"Internal Server Error: {str(e)}"}
+            return dumps( {"status": 501, "details": f"Internal Server Error: {str(e)}"}).encode()
     except Exception as e:
         print(f"log {datetime.now()}: {e}")
+        raise e #TODO: для отладки
+        return dumps({"status": 400, "details": "Bad request"}).encode()
 
 
     if not 'status' in answer.keys():

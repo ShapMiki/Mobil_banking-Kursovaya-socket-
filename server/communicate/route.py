@@ -1,8 +1,12 @@
+from datetime import datetime
+
 from user.dao import UsersDAO
 from user.auth import get_password_hash, authenticate_user, create_access_token, get_current_user
 from user.service import get_user_data
 from card.service import *
 from background_process.currency import currency
+
+
 
 router_dir = {
     'get': {},
@@ -63,9 +67,11 @@ def get_user_data_api(data):
 @router('post', 'check_auth')
 def check_auth(data):
     user = get_current_user(data)
+
     if not user:
         return {"status": 401, "details": "Unauthorized"}
 
+    UsersDAO.update_one(user.id, last_seance=datetime.now())
     jwt = create_access_token(data={"sub": str(user.id)})
     return {"JWT": jwt, "Auth": True}
 

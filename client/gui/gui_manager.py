@@ -449,8 +449,8 @@ class GUIManager:
     def success_auth(self):
         def run():
             try:
-                self.update_user_data()
-                self.app.after(20, self._success_auth_ui)
+                self.app.after(20, self.update_user_data)
+                self.app.after(40, self._success_auth_ui)
             except Exception as e:
                 self.app.after(0, self.open_popup, str(e))
 

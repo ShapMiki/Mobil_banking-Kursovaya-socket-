@@ -58,11 +58,12 @@ def quit_account():
 def check_auth():
     try:
         answer = client.post('check_auth', {})
-    except:
+    except Exception as e:
         return False
+
     try:
          client.update_jwt(answer['data']['JWT'])
-    except KeyError:
+    except KeyError as e:
         return False
     return True
 
