@@ -122,8 +122,10 @@ class Client:
             raise ConnectionError(details)
             #return {"status": answer["status"], "details": details}
 
-        answer['data'] = self.decryption(self.server_key, answer['data'])
-
+        try:
+            answer['data'] = self.decryption(self.server_key, answer['data'])
+        except KeyError:
+            answer['data'] = None
         print(answer)
         return answer
 

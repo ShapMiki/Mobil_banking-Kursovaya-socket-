@@ -1,9 +1,11 @@
 from sqlalchemy import select, insert, update, inspect
 from sqlalchemy.orm import joinedload
+from sqlalchemy.orm.attributes import flag_modified
 from decimal import Decimal, getcontext
 from datetime import datetime
 
 from dao.base import BaseDAO
+from user.dao import UsersDAO
 from modules.database import Session
 
 from data.service import credit_info, entity_data
@@ -41,6 +43,31 @@ class CardDAO(BaseDAO):
             session.commit()
 
     @classmethod
+    def delete_card(cls, user, card_number):
+        with Session() as session:
+            # Проверяем, привязан ли объект user к текущей сессии
+            if user not in session:
+                # Если объект не привязан к сессии, загружаем его заново
+                user_id = user.id
+                user = session.get(User, user_id)
+                if not user:
+                    raise ValueError("Пользователь не найден")
+
+            card = session.query(Card).filter_by(card_number=card_number).first()
+            if not card:
+                return {"status": 404, "details": "Карта не найдена"}
+
+            if card.owner != user:
+                return {"status": 403, "details": "Это не ваша карта)"}
+
+            if card.balance >= 0.01:
+                return {"status": 400, "details": "Перед удалением надо вывести деньги"}
+
+            session.delete(card)
+            session.commit()
+            return {"status": 200, "details": "Карта удалена"}
+
+    @classmethod
     def transaction(cls, user, data):
         with (Session() as session):
             try:
@@ -63,11 +90,20 @@ class CardDAO(BaseDAO):
 
                 card_inp = session.query(Card).filter_by(card_number=card_number).first()
 
-                card_out = (
-                    session.query(Card).filter_by(telephone=adr).first()
-                    if transfer_type == 'Телефону'
-                    else session.query(Card).filter_by(card_number=adr).first()
-                )
+                if transfer_type == 'Телефону':
+                    user_output = UsersDAO.find_one_or_none(telephone=adr)
+                    if not user_output:
+                        return {"status": 404, "details": "Пользователь не найден"}
+                    if user_output.id == user.id:
+                        return {"status": 400, "details": "Вы не можете перевести деньги себе"}
+                    for card in user_output.cards:
+                        if card.currency == card_inp.currency and card.type == "Дебетовая карта":
+                            card_out = (session.query(Card).filter_by(card_number=card.card_number).first())#СУПЕР ПРИКОЛ ДЛЯ ТОГО ЧТОБ КАРТА БЫЛА В СЕССИИИ
+                            break
+                    else:
+                        return {"status": 400, "details": "У юзера\nНет дебетовой карты для перевода\nВ этой валюте"}
+                else:
+                    card_out = (session.query(Card).filter_by(card_number=adr).first())
 
                 if not card_inp or not card_out:
                     return {"status": 400, "details": "Карта не найдена"}
@@ -112,7 +148,12 @@ class CardDAO(BaseDAO):
 
                 card_inp.transactions.append(f"Отправлено: {amount} на {card_out.card_number}    -   {datetime.now().strftime('%H:%M:%S %d.%m.%Y')}")
                 card_out.transactions.append(f"Получено:  {amount} от {card_inp.card_number}   -   {datetime.now().strftime('%H:%M:%S %d.%m.%Y')}")
+                flag_modified(card_inp, "transactions")
+                flag_modified(card_out, "transactions")
+                card_inp.last_transaction = datetime.now()
+                card_out.last_transaction = datetime.now()
                 session.commit()
+                print(f"!!!!!!!!!!!!!!!log {datetime.now()}: перевод {amount} с карты {card_inp.card_number} на карту {card_out.card_number}")
                 return {"status": 200, "details": "Успешно переведено"}
 
             except Exception as e:

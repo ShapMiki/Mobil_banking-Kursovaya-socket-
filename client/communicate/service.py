@@ -2,7 +2,15 @@ from communicate.client import client
 from json import load, dump
 import asyncio
 
-
+def delete_card_serv(card_number):
+    data = {
+        'card_number': card_number
+    }
+    answer = client.post('delete_card_api', data)
+    try:
+        return answer['details']
+    except KeyError:
+        raise ConnectionError('Ошибка удаления карты')
 
 def get_currency():
     answer = client.get('currency_api')
@@ -42,8 +50,10 @@ def create_product(product_type, is_named_product, currency):
         'is_named_product': is_named_product,
         'currency': currency
     }
-    task = client.post('create_product_api', data)
-    print(task)
+    try:
+        client.post('create_product_api', data)
+    except ConnectionError as e:
+        return e
 
 def quit_account():
     with open("data/server_config.json", "r") as json_file:

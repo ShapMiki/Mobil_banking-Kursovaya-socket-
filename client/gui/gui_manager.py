@@ -189,6 +189,7 @@ class GUIManager:
 
             create_product(product_type, is_named_product, currency)
         except Exception as e:
+            raise e
             self.open_popup(e)
             return
 
@@ -285,7 +286,12 @@ class GUIManager:
                 self.open_popup(e)
 
         def delete_card(card_number):
-            print("ПУПУРУПУПУ,ТАТАРАТАТА")
+            try:
+                delete_card_serv(card_number)
+                self.card_wind.destroy()
+            except Exception as e:
+                self.open_popup(e)
+                return
 
         self.card_wind = CTkToplevel(self.app)
         self.card_wind.title("Информация о карте")

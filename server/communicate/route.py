@@ -53,6 +53,14 @@ def create_product_api(data):
     add_product(user, data['data'])
 
 
+@router('post', 'delete_card_api')
+def delete_card_api(data):
+    user = get_current_user(data)
+    if not user:
+        return {"status": 401, "details": "Unauthorized"}
+
+    return delete_card(user, data['data'])
+
 
 @router('post', 'get_user_data_api')
 def get_user_data_api(data):

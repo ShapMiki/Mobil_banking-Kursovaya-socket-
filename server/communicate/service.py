@@ -30,9 +30,12 @@ class Proccessing:
             encrypted_data = Proccessing.encryption(Proccessing.server_key, answer)
             responce = {'data': encrypted_data}
 
-            if  'details'  and 'status' in answer.keys():
-                responce["status"] = answer['status']
-                responce['details'] = answer['details']
+            try:
+                if 'details' and 'status' in answer.keys():
+                    responce["status"] = answer['status']
+                    responce['details'] = answer['details']
+            except AttributeError as e:
+                responce = {"status": 200, "details": "no answer"}
 
             return responce
 
@@ -55,9 +58,12 @@ class Proccessing:
 
             responce = {'data': answer}
 
-            if 'details' and 'status' in answer.keys():
-                responce["status"] = answer['status']
-                responce['details'] = answer['details']
+            try:
+                if 'details' and 'status' in answer.keys():
+                    responce["status"] = answer['status']
+                    responce['details'] = answer['details']
+            except AttributeError:
+                responce = {"status": 200, "details": "no answer"}
 
             return responce
         except Exception as e:

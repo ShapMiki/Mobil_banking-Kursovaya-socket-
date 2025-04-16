@@ -62,16 +62,21 @@ class Currency:
             self.save_shd()
 
     def calculate_shd(self):
-        big_game = randrange(0,20,1)
-        if big_game == 1:
+        big_game = randrange(0,100,1)
+        if big_game < 5:
             procent = randrange(-200, 200)/100
+        elif big_game == 77:
+            procent = randrange(-10000, 10000)/100
         else:
             procent = randrange(-100, 100, )/1000
 
         if self.shd < 0.0001:
             procent = abs(procent)
 
+
         self.shd += self.shd * procent
+        if self.shd < 0:
+            self.shd = 0.0001
         self.save_shd()
 
     def to_dict(self) -> dict:

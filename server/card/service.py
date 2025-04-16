@@ -7,6 +7,9 @@ def transfer_money(user, data):
     answer = CardDAO.transaction(user, data)
     return answer
 
+def delete_card(user, data):
+    card_number = data['card_number']
+    return CardDAO.delete_card(user, card_number)
 
 def add_product(user, data):
     #TODO: Сделать проверку на количество карт
