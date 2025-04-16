@@ -1,1 +1,1 @@
-{"host": "192.168.1.100", "port": 3334, "JWT": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzQ1NDEzNjU5fQ.NoJppqzHDEs3He0G3-c7T0NEk9LT1Y3C4NvI02PHo1k", "key": "\\x6e786946624e68705f706b476130746f653075645477416a733234305a37304743563851337277507842453d", "ip": "10.2.0.2", "server_key": "3nBGTLyXjpz_X-CLFtkEVnm6TdwoX2Igm_3wll1JLek=", "config_version": "v1.0.0.28.03.2025"}
+{"host": "192.168.1.100", "port": 3334, "JWT": null, "key": null, "ip": "10.2.0.2", "server_key": "3nBGTLyXjpz_X-CLFtkEVnm6TdwoX2Igm_3wll1JLek=", "config_version": "v1.0.0.28.03.2025"}
