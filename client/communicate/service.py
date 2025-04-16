@@ -4,7 +4,24 @@ import asyncio
 
 def get_currency():
     answer = client.get('currency_api')
-    return answer["data"]['details']
+    try:
+
+        currency = answer["data"]
+
+        currency["RUB"]['buy'] *= 0.01
+        currency['RUB']['sell'] *= 0.01
+        for i in currency:
+            currency[i]['buy'] = round(1/currency[i]['buy'], 2)
+            currency[i]['sell'] = round(1/currency[i]['sell'], 2)
+
+
+
+        print(currency)
+        return currency
+    except KeyError:
+        return answer['details']
+
+
 
 
 def  transfer_service(card_number, adr, sum, transfer_type):

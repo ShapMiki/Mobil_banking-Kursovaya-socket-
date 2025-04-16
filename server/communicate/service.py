@@ -19,7 +19,7 @@ class Proccessing:
             # Расшифровываем данные
             try:
                 data['data'] = Proccessing.decryption(Proccessing.server_key, data['data'])
-                print(data)
+                print(data) # TODO: для отладки
             except Exception as e:
                 print(f"Error decrypting data: {e}")
                 return {"status": 400, "details": "Failed to decrypt data"}
@@ -29,6 +29,10 @@ class Proccessing:
 
             encrypted_data = Proccessing.encryption(Proccessing.server_key, answer)
             responce = {'data': encrypted_data}
+
+            if  'details'  and 'status' in answer.keys():
+                responce["status"] = answer['status']
+                responce['details'] = answer['details']
 
             return responce
 
@@ -42,40 +46,23 @@ class Proccessing:
     def get(data) -> dict:
         try:
             routers = router_dir['get']
-            if data['route'] not in routers:
+            print(data) # TODO: для отладки
+            if data['headers']['route'] not in routers:
                 return {"status": 404, "details": "Route not found"}
             
             answer = {}
-            answer['data'] = routers[data['route']](data)
-            return answer
+            answer.update(routers[data['headers']['route']](data))
+
+            responce = {'data': answer}
+
+            if 'details' and 'status' in answer.keys():
+                responce["status"] = answer['status']
+                responce['details'] = answer['details']
+
+            return responce
         except Exception as e:
             print(f"Error in get: {e}")
-            return {"status": 500, "details": f"Internal server error: {str(e)}"}
-
-    @staticmethod
-    def security_post(data) -> dict:
-        try:
-            routers = router_dir['SECURITY_POST']
-            if data['route'] not in routers:
-                return {"status": 404, "details": "Route not found"}
-
-            # Расшифровка
-            try:
-                data = Proccessing.decryption(data)
-            except Exception as e:
-                print(f"Error decrypting data: {e}")
-                return {"status": 400, "details": "Failed to decrypt data"}
-
-            # Действие
-            try:
-                answer = routers[data['route']](data)
-                return answer
-            except Exception as e:
-                print(f"Error processing route: {e}")
-                return {"status": 500, "details": f"Error processing request: {str(e)}"}
-
-        except Exception as e:
-            print(f"Unexpected error in security_post: {e}")
+            raise e # TODO: для отладки
             return {"status": 500, "details": f"Internal server error: {str(e)}"}
 
     @staticmethod
@@ -95,9 +82,9 @@ class Proccessing:
             cipher_suite = Fernet(key)
             encrypted_data = base64.b64decode(data)
             decrypted_data = cipher_suite.decrypt(encrypted_data)
-            print(f"ЗАШИФРОВАННО: {data}")
+            print(f"ЗАШИФРОВАННО: {data}") # TODO: для отладки
             data = loads(decrypted_data.decode())
-            print(f"РАСШИФРОВАННО: {data}")
+            print(f"РАСШИФРОВАННО: {data}") # TODO: для отладки
             return data
         except Exception as e:
             print(f"Ошибка при расшифровке: {str(e)}")

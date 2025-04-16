@@ -22,7 +22,8 @@ class Client:
 
         try:
             self.sock.connect((self.config["host"], self.config["port"]))
-        except:
+        except Exception as e:
+
             pass #raise ConnectionError("нет подключения, Попробуйте позже")
 
         try:
@@ -44,6 +45,10 @@ class Client:
             "config_version": self.config["config_version"]
         }
 
+    def write_config(self):
+        with open("data/server_config.json", "w") as json_file:
+            dump(self.config, json_file)
+
     def update_json(self):
         with open("data/server_config.json", "r") as json_file:
             self.config = load(json_file)
@@ -64,6 +69,11 @@ class Client:
             return True
         except:
              return False
+
+    def change_connection(self, ip, port):
+        self.config["host"] = ip
+        self.config["port"] = port
+        self.write_config()
 
     def get(self, route, data: dict = {"details": "No data"}) -> dict:
         try:
@@ -95,7 +105,7 @@ class Client:
             request = {'headers': headers, 'data': encrypt_data}
 
             self.sock.send(dumps(request).encode())
-        except OSError:
+        except OSError as e:
             if self.reconnect():
                 return self.post(route, data)
             else:

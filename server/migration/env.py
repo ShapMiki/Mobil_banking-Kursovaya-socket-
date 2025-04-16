@@ -9,6 +9,11 @@ from user.models import User
 from card.models import Card
 from modules.database import Base, DATABASE_URL
 
+#КОСТЫЛЬ
+import sys
+from os.path import abspath, dirname
+sys.path.insert(0, dirname(dirname(dirname(abspath(__file__)))))
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

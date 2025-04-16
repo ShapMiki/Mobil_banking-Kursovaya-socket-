@@ -20,29 +20,33 @@ functions = {
 }
 
 def processing_data(data):
-    data = loads(data.decode())
-    print(data)
-
-    if not ('headers' in data or 'data' in data):
-        answer =  {"status": 400, "details": "bad request"}
-
-    if not data['headers']['config_version'] == settings.config_version:
-        answer =  {"status": 421,  'details': "You need to update app"}
-
     try:
-        print(f"\nlog: {datetime.now().strftime('%H:%M:%S %d.%m.%Y')} \nip:{data['headers']['ip']}\n")
-    except KeyError:
-        answer =  {'status': 403, 'details': 'Forbidden. Need you ip'}
+        data = loads(data.decode())
+        print(data)
 
-    try:
-        answer = functions[data['headers']['method']](data)
-    except KeyError as e:
-        raise e  # TODO: для отладки
-        answer =  {"status": 404, 'details': 'Method not found'}
+        if not ('headers' in data or 'data' in data):
+            return  dumps({"status": 400, "details": "bad request"}).encode()
+
+        if not data['headers']['config_version'] == settings.config_version:
+            return  dumps({"status": 421,  'details': "You need to update app"}).encode()
+
+        try:
+            print(f"\nlog: {datetime.now().strftime('%H:%M:%S %d.%m.%Y')} \nip:{data['headers']['ip']}\n")
+        except KeyError:
+            return  dumps({'status': 403, 'details': 'Forbidden. Need you ip'}).encode()
+
+        try:
+            answer = functions[data['headers']['method']](data)
+        except KeyError as e:
+            raise e  # TODO: для отладки
+            answer =  {"status": 404, 'details': 'Method not found'}
+        except Exception as e:
+            raise e  # TODO: для отладки
+            print(f"Error processing request: {e}")
+            answer =  {"status": 501, "details": f"Internal Server Error: {str(e)}"}
     except Exception as e:
-        raise e  # TODO: для отладки
-        print(f"Error processing request: {e}")
-        answer =  {"status": 500, "details": f"Internal Server Error: {str(e)}"}
+        print(f"log {datetime.now()}: {e}")
+
 
     if not 'status' in answer.keys():
         answer['status'] = 200

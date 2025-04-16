@@ -18,6 +18,7 @@ def get_user_data(user):
             }
             cards.append(card_data)
 
+        cards.sort(key=lambda x: x['card_number'])
 
         user_data = {
             'name': user.name,

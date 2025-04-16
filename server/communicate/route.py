@@ -1,7 +1,8 @@
 from user.dao import UsersDAO
-from user.auth import get_password_hash, verify_password, authenticate_user, create_access_token, get_current_user
+from user.auth import get_password_hash, authenticate_user, create_access_token, get_current_user
 from user.service import get_user_data
 from card.service import *
+from background_process.currency import currency
 
 router_dir = {
     'get': {},
@@ -16,14 +17,17 @@ def router(method, route):
     return decorator
 
 
-@router('get', 'get_name')
-def get_name(data):
-    print(data)
+@router('get', 'check_start')
+def check_start(data = None):
+    return {"status": 200, "details": "Сервер запущен, get: get_congif для подробной информации"}
+
+@router('get', 'get_config')
+def get_name(data = None):
+    return {}
 
 @router('get', 'currency_api')
-def get_currency(data):
-    print(data)
-    return {"status": 200, "details": "USD", "currency": "USD"}
+def get_currency(data = None):
+    return currency.to_dict()
 
 @router('post', 'transfer_money_api')
 def transfer_money_api(data):
@@ -110,7 +114,5 @@ def login(data):
 def set_balance(data):
     print(data)
 
-# Test the functions
-router_dir['get']['get_name'](3435)
-router_dir['post']['get_balance'](3435)
-router_dir['SECURITY_POST']['set_balance'](3435)
+
+print(router_dir['get']['check_start'](None))

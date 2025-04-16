@@ -33,7 +33,7 @@ class GUIManager:
             bool_check = check_auth()
             return bool_check
         except:
-            if n > 3:
+            if n > 2:
                 return "offline"
             await asyncio.sleep(1)
             return await self.wait_connection(n+1)
@@ -41,22 +41,50 @@ class GUIManager:
     async def asynsleep(self):
         await asyncio.sleep(3)
 
+    def change_connect_proccesing(self, ip, port):
+        client.change_connection(ip, int(port))
+        self.chenge_conect_top.destroy()
+        self.app.after(0, self.main)
+
+
+    def chenge_conect(self):
+        self.chenge_conect_top = CTkToplevel(self.app)
+        self.chenge_conect_top.title("Проверьте подключение")
+        main_x = self.app.winfo_x()
+        main_y = self.app.winfo_y()
+        self.chenge_conect_top.geometry(f"{self.width - 10}x{self.height - 10}+{main_x + 5}+{main_y + 5}")
+        ip_entry = CTkEntry(self.chenge_conect_top, width=200, placeholder_text=client.config['ip'])
+        ip_entry.insert(0, client.config['host'])
+        ip_entry.place(x=self.width*0.35, y=40)
+        port_entry = CTkEntry(self.chenge_conect_top, width=200, placeholder_text=client.config['port'])
+        port_entry.insert(0, client.config['port'])
+        port_entry.place(x=self.width*0.35, y=80)
+        CTkButton(self.chenge_conect_top,
+                  text="Переподключиться",
+                  command=lambda: self.change_connect_proccesing(ip_entry.get(), port_entry.get())
+                  ).place(x=self.width*0.35, y=120)
+
+        self.chenge_conect_top.grab_set()
+
     def main(self):
         def check_connection_thread():
+
             try:
                 bool_check = check_auth()
             except Exception as e:
                 self.open_popup(e)
                 bool_check = asyncio.run(self.wait_connection())
 
+
             if bool_check == "offline":
-                self.app.after(0, self.open_popup, "Нет подключения к серверу, попробуйте позже")
-                asyncio.run(self.asynsleep())
-                self.app.quit()
+                self.app.after(0,self.chenge_conect)
+
+
             if bool_check:
                 self.app.after(0, self.authorizate_buid)
             else:
                 self.app.after(0, self.non_authorizate_buid)
+
 
         connection_thread = threading.Thread(target=check_connection_thread, daemon=True)
         connection_thread.start()
@@ -97,17 +125,22 @@ class GUIManager:
         self.build_payment_tab()
         self.build_main_tab()
         self.build_personal_account()
+        self.build_main_tab()
+
 
 
     def build_payment_tab(self):
         def get_curent_currency():
             try:
                 currency = get_currency()
-                usd_cur_label.config(text=f"{currency['USD']['buy']:>10.2f}      {currency['USD']['sell']:>10.2f}")
-                eur_cur_label.config(text=f"{currency['EUR']['buy']:>10.2f}      {currency['EUR']['sell']:>10.2f}")
-                rub_cur_label.config(text=f"{currency['RUB']['buy']:>10.2f}      {currency['RUB']['sell']:>10.2f}")
-                shd_cur_label.config(text=f"{currency['SHD']['buy']:>10.2f}      {currency['SHD']['sell']:>10.2f}")
+                def update_label():
+                    usd_cur_label.configure(text=f"{currency['USD']['buy']:>10.2f}      {currency['USD']['sell']:>10.2f}")
+                    eur_cur_label.configure(text=f"{currency['EUR']['buy']:>10.2f}      {currency['EUR']['sell']:>10.2f}")
+                    rub_cur_label.configure(text=f"{currency['RUB']['buy']:>10.2f}      {currency['RUB']['sell']:>10.2f}")
+                    shd_cur_label.configure(text=f"{currency['SHD']['buy']:>10.2f}      {currency['SHD']['sell']:>10.2f}")
+                self.app.after(0, update_label())
             except Exception as e:
+                raise e #todo: для отладки
                 self.open_popup(e)
                 return
 
@@ -139,6 +172,7 @@ class GUIManager:
                   ).place(x=220, y=90)
 
         threading.Thread(target=get_curent_currency, daemon=True).start()
+
 
     def fin_proccesing(self, product_type, is_named_product, currency, is_agree1, is_agree2):
         if not (is_agree1.get() and is_agree2.get()):
@@ -248,7 +282,6 @@ class GUIManager:
                 self.open_popup(answer, "Уведомление")
                 self.card_wind.destroy()
             except Exception as e:
-                raise e
                 self.open_popup(e)
 
         def delete_card(card_number):
@@ -313,6 +346,13 @@ class GUIManager:
 
         self.card_wind.grab_set()
 
+    def refresh_main_tab(self):
+        # Clear all widgets in the main_tab
+        for widget in self.main_tab.winfo_children():
+            widget.destroy()
+        # Update user data and rebuild the tab
+        self.update_user_data()
+        self.build_main_tab()
 
     def build_main_tab(self):
         CTkLabel(self.main_tab, text="Мои продукты", font=self.font['h1']).place(x=self.width*0.35, y=20)
@@ -350,6 +390,7 @@ class GUIManager:
             ).place(x=65, y=72)
             CTkButton(card_frame, text="Открыть", width=5, command=partial(self.on_card_click, card)).place(x=10, y=68)
             card_frame.place(x=40 + 220*(i%2), y=130 + 110*(i//2))
+        self.main_tab.after(15000, self.refresh_main_tab)
 
     def quit_account_proccesing(self):
         quit_account()
@@ -479,14 +520,14 @@ class GUIManager:
 
         ).place(x=self.width * 0.36, y=550)
 
-    def open_popup(self, e, tittle="Ошибка"):
+    def open_popup(self, e, title = 'Ошибка'):
         text = str(e)
         # Создание всплывающего окна в главном потоке
-        self.app.after(0, self._open_popup, text, tittle)
+        self.app.after(0, self._open_popup, text, title)
 
-    def _open_popup(self, text, tittle="Ошибка"):
+    def _open_popup(self, text, title):
         popup = CTkToplevel(self.app)
-        popup.title(tittle)
+        popup.title(title)
         popup.geometry("400x200")
 
         CTkLabel(popup, text=text, anchor="center").pack(pady=20)

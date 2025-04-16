@@ -1,13 +1,16 @@
-from dao.base import BaseDAO
-from modules.database import Session
-from card.models import Card
-from user.models import User
 from sqlalchemy import select, insert, update, inspect
 from sqlalchemy.orm import joinedload
+from decimal import Decimal, getcontext
+from datetime import datetime
+
+from dao.base import BaseDAO
+from modules.database import Session
 
 from data.service import credit_info, entity_data
+from card.models import Card
+from user.models import User
+from background_process.currency import currency
 
-from decimal import Decimal, getcontext
 
 
 class CardDAO(BaseDAO):
@@ -39,12 +42,18 @@ class CardDAO(BaseDAO):
 
     @classmethod
     def transaction(cls, user, data):
-        with Session() as session:
+        with (Session() as session):
             try:
                 adr = data['adr']
                 card_number = data['card_number']
                 transfer_type = data['transfer_type']
-                amount = Decimal(data['sum'])
+                try:
+                    amount = Decimal(data['sum'])
+                except:
+                    return {"status": 400, "details": "Неверная сумма"}
+
+                if amount < 0.1:
+                    return {"status": 400, "details": "Слишком маленький перевод"}
 
                 # Проверка, привязан ли пользователь к сессии
                 if not inspect(user).persistent:
@@ -69,6 +78,7 @@ class CardDAO(BaseDAO):
                 if card_inp.owner != user:
                     return {"status": 403, "details": "Это не ваша карта)"}
 
+
                 # Проверка лимита
                 if card_inp.type in ["Кредитная карта", "Овердрафтная карта", "Кредит"]:
                     if card_inp.balance - amount < card_inp.limit:
@@ -77,18 +87,37 @@ class CardDAO(BaseDAO):
                     if card_inp.balance - amount < 0:
                         return {"status": 400, "details": "Недостаточно средств на карте"}
 
+                if card_out.type in ["Кредитная карта", "Кредит"] and card_out.balance + amount > 0:
+                    return {"status": 400, "details": "на кредитной карте не может быть больше 0"}
+
                 # Перевод
                 if card_inp.currency != card_out.currency and card_inp.owner == card_out.owner:
-                    pass  # TODO: сделать конвертацию
+                    loc_curency = currency.to_dict()
+                    if card_inp.currency == "BYN":
+                        inp_amount_byn = amount
+                    else:
+                        inp_amount_byn = amount * (Decimal("1") / Decimal(str(loc_curency[card_inp.currency]['buy'])))
+
+                    if card_out.currency == "BYN":
+                        out_amount = inp_amount_byn
+                    else:
+                        out_amount = inp_amount_byn * Decimal(str(loc_curency[card_out.currency]['sell']))
+
+                    card_inp.balance -= amount
+                    card_out.balance += out_amount
+
                 else:
                     card_inp.balance -= amount
                     card_out.balance += amount
 
+                card_inp.transactions.append(f"Отправлено: {amount} на {card_out.card_number}    -   {datetime.now().strftime('%H:%M:%S %d.%m.%Y')}")
+                card_out.transactions.append(f"Получено:  {amount} от {card_inp.card_number}   -   {datetime.now().strftime('%H:%M:%S %d.%m.%Y')}")
                 session.commit()
                 return {"status": 200, "details": "Успешно переведено"}
 
             except Exception as e:
                 session.rollback()
+                raise e
                 return {"status": 500, "details": f"Ошибка: {str(e)}"}
 
 

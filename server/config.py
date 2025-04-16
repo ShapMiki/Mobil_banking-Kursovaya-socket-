@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     secret_server_key: str
     time_zone: int
     config_version:str
+    currencyapicom_api_key:str
 
     @model_validator(mode="before")
     @classmethod
