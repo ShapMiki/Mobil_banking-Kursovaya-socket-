@@ -174,6 +174,9 @@ class CardDAO(BaseDAO):
                 if not owner:
                     raise ValueError("Пользователь не найден")
 
+            if len(owner.cards) >= 8:
+                raise ValueError({"status": 400, "details": "Превышен лимит карт"})
+
             if is_named:
                 card_name = f"{owner.name} {owner.surname}"
             else:

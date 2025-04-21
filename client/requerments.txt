@@ -1,4 +1,0 @@
-cryptography-44.0.2
-customtkinter-5.2.2
-tkintermapview-1.29
-bcrypt==4.3.0

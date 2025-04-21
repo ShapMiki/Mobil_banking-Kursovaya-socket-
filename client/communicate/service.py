@@ -2,7 +2,10 @@ from communicate.client import client
 from json import load, dump
 import asyncio
 
-def delete_card_serv(card_number):
+
+
+def delete_card_serv(card_number)-> dict:
+    """Удаляет карту по номеру карты"""
     data = {
         'card_number': card_number
     }
@@ -12,10 +15,11 @@ def delete_card_serv(card_number):
     except KeyError:
         raise ConnectionError('Ошибка удаления карты')
 
-def get_currency():
+
+def get_currency() -> dict:
+    """Получает курс валют"""
     answer = client.get('currency_api')
     try:
-
         currency = answer["data"]
 
         currency["RUB"]['buy'] *= 0.01
@@ -24,17 +28,17 @@ def get_currency():
             currency[i]['buy'] = round(1/currency[i]['buy'], 2)
             currency[i]['sell'] = round(1/currency[i]['sell'], 2)
 
-
-
-        print(currency)
         return currency
+
     except KeyError:
         return answer['details']
 
 
-
-
-def  transfer_service(card_number, adr, sum, transfer_type):
+def transfer_service(card_number, adr, sum, transfer_type) -> dict:
+    """
+    Переводит деньги с карты на карту
+    args: card_number - номер карты, adr - номер карты или телефон, sum - сумма перевода, transfer_type - тип перевода
+    """
     data = {
         'card_number': card_number,
         "transfer_type": transfer_type,
@@ -44,7 +48,9 @@ def  transfer_service(card_number, adr, sum, transfer_type):
     answer = client.post('transfer_money_api', data)
     return answer["data"]['details']
 
-def create_product(product_type, is_named_product, currency):
+
+def create_product(product_type, is_named_product, currency)-> None:
+    """ Создает карту/счет """
     data = {
         'product_type': product_type,
         'is_named_product': is_named_product,
@@ -53,9 +59,11 @@ def create_product(product_type, is_named_product, currency):
     try:
         client.post('create_product_api', data)
     except ConnectionError as e:
-        return e
+        raise e
 
-def quit_account():
+
+def quit_account() -> None:
+    """Выход из аккаунта"""
     with open("data/server_config.json", "r") as json_file:
         config = load(json_file)
 
@@ -69,29 +77,35 @@ def quit_account():
 
     client.update_json()
 
-def check_auth():
+def check_auth() -> bool:
+    """Проверяет авторизацию"""
     try:
         answer = client.post('check_auth', {})
+    except ConnectionRefusedError as e:
+        raise e
     except ConnectionError:
         return False
+    except Exception as e:
+       raise ConnectionRefusedError
 
     try:
          client.update_jwt(answer['data']['JWT'])
-    except KeyError as e:
+    except KeyError:
         return False
     return True
 
-def get_user_data():
+
+def get_user_data()-> dict:
+    """Получает данные пользователя"""
     answer = client.post("get_user_data_api", {})
     try:
         user_data = answer['data']
     except KeyError:
         return answer['details']
-    #with open("data/user_data.json", "w", encoding="utf-8") as json_file:
-    #    dump(user_data, json_file, ensure_ascii=False, indent=4)
     return user_data
 
-async def login(phone, password):
+async def login(phone, password)->bool:
+    """Авторизация"""
     if not phone or not password:
         raise ValueError('Все поля должны быть заполнены')
 
@@ -120,7 +134,8 @@ async def login(phone, password):
     return True
 
 
-async def registration(name, surname, passport_number, passport, phone, password):
+async def registration(name, surname, passport_number, passport, phone, password)-> bool:
+    """Регистрация"""
     if not name or not surname or not passport_number or not passport or not phone or not password:
         raise ValueError('Все поля должны быть заполнены')
 

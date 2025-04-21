@@ -11,7 +11,6 @@ from background_process.currency import currency
 router_dir = {
     'get': {},
     'post': {},
-    'SECURITY_POST': {}
 }
 
 def router(method, route):
@@ -50,8 +49,10 @@ def create_product_api(data):
     user = get_current_user(data)
     if not user:
         return {"status": 401, "details": "Unauthorized"}
-    add_product(user, data['data'])
-
+    try:
+        add_product(user, data['data'])
+    except Exception as e:
+        return {"status": 400, "details": f"{str(e)}"}
 
 @router('post', 'delete_card_api')
 def delete_card_api(data):

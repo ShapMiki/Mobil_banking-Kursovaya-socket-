@@ -1,8 +1,8 @@
+#docker save -o shadypay.tar shadypay:latest
 import socket
 from threading import Thread
 from json import dumps, loads
 from datetime import datetime
-
 
 from communicate.service import Proccessing
 from config import settings
@@ -16,7 +16,6 @@ CONNECTION_TIMEOUT = 600
 functions = {
     "get": lambda data: Proccessing.get(data),
     "post": lambda data: Proccessing.post(data),
-    "SECURITY_POST": lambda data: Proccessing.security_post(data)
 }
 
 def processing_data(data):
@@ -86,17 +85,21 @@ def handle_client(conn):
             break
 
         except Exception as e:
+            print(e)
             answer  = {"status": 500, "details": str(e)}
             conn.send(dumps(answer).encode())
-            raise e
             break
 
     conn.close()
 
 
 def main():
+    print("Сервер запущен")
     sock = socket.socket()
+
+    print(f"HOST: {HOST}, PORT: {PORT}")
     sock.bind((HOST, PORT))
+
     sock.listen(50)
 
     while True:

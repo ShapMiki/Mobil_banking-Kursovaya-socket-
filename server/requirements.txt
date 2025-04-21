@@ -1,11 +1,11 @@
 sqlalchemy == 2.0.38
-passlib == 1.7.4
+passlib==1.7.4
 python-jose==3.4.0
-pydantic===2.11.1
+pydantic==2.11.1
 pydantic_settings==2.8.1
 psycopg2-binary==2.9.9
 cryptography==44.0.2
-alembic==
+alembic==1.15.1
 bcrypt==4.3.0
 currencyapicom==0.1.1
 schedule==1.2.2

@@ -1,13 +1,10 @@
-from customtkinter import *
-from json import load
-import asyncio
-import threading
 import time
+import threading
+from customtkinter import *
 from functools import partial
-
-from communicate.client import client
 from communicate.service import *
 from tkintermapview import TkinterMapView
+
 
 
 class GUIManager:
@@ -17,6 +14,9 @@ class GUIManager:
         self.width = 500
         self.height = 700
         self.app.geometry(f"{self.width}x{self.height}")
+        self.app.resizable(False, False)
+
+        self.app.iconbitmap("data/inpicon.ico")
 
         self.config = {}
         with open("data/client_config.json", "r", encoding="UTF-8") as json_file:
@@ -41,13 +41,14 @@ class GUIManager:
     async def asynsleep(self):
         await asyncio.sleep(3)
 
-    def change_connect_proccesing(self, ip, port):
+    def change_connect_proccesing(self, ip, port, function=None):
         client.change_connection(ip, int(port))
         self.chenge_conect_top.destroy()
         self.app.after(0, self.main)
 
 
-    def chenge_conect(self):
+
+    def chenge_conect(self, function=None):
         self.chenge_conect_top = CTkToplevel(self.app)
         self.chenge_conect_top.title("Проверьте подключение")
         main_x = self.app.winfo_x()
@@ -61,24 +62,18 @@ class GUIManager:
         port_entry.place(x=self.width*0.35, y=80)
         CTkButton(self.chenge_conect_top,
                   text="Переподключиться",
-                  command=lambda: self.change_connect_proccesing(ip_entry.get(), port_entry.get())
+                  command=lambda: self.change_connect_proccesing(ip_entry.get(), port_entry.get(), function)
                   ).place(x=self.width*0.35, y=120)
 
         self.chenge_conect_top.grab_set()
 
     def main(self):
         def check_connection_thread():
-
             try:
                 bool_check = check_auth()
-            except Exception as e:
-                self.open_popup(e)
-                bool_check = asyncio.run(self.wait_connection())
-
-
-                if bool_check == "offline":
-                    self.app.after(0,self.chenge_conect)
-
+            except ConnectionRefusedError as e:
+                self.app.after(0,self.chenge_conect)
+                return
 
             if bool_check:
                     self.app.after(0, self.authorizate_buid)
@@ -94,21 +89,16 @@ class GUIManager:
     def update_user_data(self):
         try:
             self.user_data = get_user_data()
-            print("Получены данные пользователя:", self.user_data)  # Отладочная информация
         except Exception as e:
-            raise e
-            print("Ошибка при получении данных:", str(e))  # Отладочная информация
             self.open_popup(e)
 
     def authorizate_buid(self):
         def run():
             try:
                 self.update_user_data()
-                print("Данные перед построением интерфейса:", self.user_data)  # Отладочная информация
                 self.app.after(0, self._build_authorized_interface)
             except Exception as e:
                 raise e
-                print("Ошибка в потоке авторизации:", str(e))  # Отладочная информация
                 self.app.after(0, self.open_popup, str(e))
 
         threading.Thread(target=run, daemon=True).start()
@@ -140,7 +130,6 @@ class GUIManager:
                     shd_cur_label.configure(text=f"{currency['SHD']['buy']:>10.2f}      {currency['SHD']['sell']:>10.2f}")
                 self.app.after(0, update_label())
             except Exception as e:
-                raise e #todo: для отладки
                 self.open_popup(e)
                 return
 
@@ -189,7 +178,6 @@ class GUIManager:
 
             create_product(product_type, is_named_product, currency)
         except Exception as e:
-            raise e
             self.open_popup(e)
             return
 
@@ -253,6 +241,22 @@ class GUIManager:
 
         # Модальное поведение (блокирует фон до закрытия)
         self.fin_wind.grab_set()
+
+    def show_about_window(self):
+        self.about_window = CTkToplevel(self.app)
+        self.about_window.title("О программе")
+        main_x = self.app.winfo_x()
+        main_y = self.app.winfo_y()
+        self.about_window.geometry(f"{self.width - 10}x{self.height - 10}+{main_x + 5}+{main_y + 5}")
+        CTkLabel(self.about_window, text="ShadyPay", font=self.font['h1']).pack(pady=10)
+        CTkLabel(self.about_window, text="Версия 1.2", font=self.font['h5']).pack(pady=10)
+        CTkLabel(self.about_window, text="Разработчик: \n\n"
+                                          "Шаплавский Никита\n\n"
+                                          "Группа: 10701323", font=self.font['h5']).pack(pady=10)
+        CTkLabel(self.about_window, text="Программа для управления банковскими продуктами", font=self.font['p']).pack(pady=10)
+        CTkLabel(self.about_window, text="2025", font=self.font['h5']).pack(pady=10)
+        CTkButton(self.about_window, text="Закрыть", command=self.about_window.destroy).pack(pady=10)
+        self.about_window.grab_set()
 
     def on_card_click(self, card):
         def change_label(label, text):
@@ -372,11 +376,11 @@ class GUIManager:
                 ).place(x=160, y=60)
 
         CTkButton(self.main_tab,
-                text="Настройки",
+                text="Информация",
                 width=80,
                 height=50,
                 font=self.font['p'],
-                command=self.open_popup
+                command=self.show_about_window
                 ).place(x=260, y=60)
 
         cards = self.user_data['cards']
@@ -404,10 +408,8 @@ class GUIManager:
         self.app.quit()
 
     def build_personal_account(self):
-        print("Построение личного кабинета, данные:", self.user_data)  # Отладочная информация
         if not self.user_data:
-            print("Данные пользователя пустые!")  # Отладочная информация
-            return
+            time.sleep(0.5)
 
         CTkLabel(self.personal_account, text="Личный кабинет", font=self.font['h1']).place(x=self.width*0.33, y=50)
 
@@ -486,7 +488,6 @@ class GUIManager:
         threading.Thread(target=run, daemon=True).start()
 
     def non_authorizate_buid(self):
-        #делаю без self, чтобы сборщик мусора удалил объекты после прохождения
         self.tabview_unauth = CTkTabview(self.app, anchor="s")
         self.tabview_unauth.pack(expand=True, fill='both')
 

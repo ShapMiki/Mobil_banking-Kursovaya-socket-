@@ -12,6 +12,5 @@ def delete_card(user, data):
     return CardDAO.delete_card(user, card_number)
 
 def add_product(user, data):
-    #TODO: Сделать проверку на количество карт
     card = CardDAO.add_card(user, data['product_type'], data["is_named_product"], data['currency'])
     return card
