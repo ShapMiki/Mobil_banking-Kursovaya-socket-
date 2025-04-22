@@ -2,28 +2,44 @@ services:
   db:
     image: postgres:15
     container_name: my_postgres_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
     env_file:
       - .env
-    environment:
-      POSTGRES_DB: mydb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+
     ports:
       - "5432:5432"
 
   shadypayserver:
     image: shadypay
+    restart: always
     build:
       context: .
+
     container_name: shadypayserver_app
+
+    command: bash -c "alembic upgrade head && \
+             echo 'Ждем PostgreSQL... 20 сек' && \
+             sleep 20 && \
+             python /usr/src/ShadyPayServer/main.py"
+
     env_file:
       - .env
-    depends_on:
-      - db
-    command: ["/ShadyPayServer/docker/main.sh"]
+
     ports:
       - "3334:3334"
       - "8000:8000"
       - "4444:4444"
 
+    depends_on:
+      - db
 
+volumes:
+  postgres_data:

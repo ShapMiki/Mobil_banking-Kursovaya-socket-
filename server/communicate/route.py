@@ -125,9 +125,4 @@ def login(data):
     return {'JWT': jwt, "key":key}
 
 
-@router('SECURITY_POST', 'set_balance')
-def set_balance(data):
-    print(data)
-
-
 print(router_dir['get']['check_start'](None))

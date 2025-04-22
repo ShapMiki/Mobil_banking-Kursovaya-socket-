@@ -58,6 +58,7 @@ ShadyPay (Банкинг)
 1.  Откройте команлную строку
 2. Перейдите в директорию в которой вы хотите расположить проект
 3. Введите команду ``` git clone https://github.com/ShapMiki/Mobil_banking-Kursovaya-socket-.git```
+4. Введите команду ``` cd Mobil_banking-Kursovaya-socket- ``` - переход в корневую директорию проекта
 
 <br>
 
