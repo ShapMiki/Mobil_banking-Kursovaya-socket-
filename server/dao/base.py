@@ -6,10 +6,10 @@ class BaseDAO:
     model = None
 
     @classmethod
-    async def find_one_or_none(cls, **kwargs):
-        async with Session() as session:
+    def find_one_or_none(cls, **kwargs):
+         with Session() as session:
             query = select(cls.model).filter_by(**kwargs)
-            result = await session.execute(query)
+            result = session.execute(query)
             return result.scalar_one_or_none()
 
     @classmethod

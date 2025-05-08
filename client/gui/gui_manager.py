@@ -108,7 +108,7 @@ class GUIManager:
         self.tabview = CTkTabview(self.app, anchor="s")
         self.tabview.pack(expand=True, fill='both')
 
-        self.payment_tab = self.tabview.add("Платежи")
+        self.payment_tab = self.tabview.add("Информация")
         self.main_tab = self.tabview.add("Главная")
         self.personal_account = self.tabview.add("Кабинет")
 
@@ -134,7 +134,7 @@ class GUIManager:
                 return
 
         currency_frame = CTkFrame(self.payment_tab, width=400, height=500)
-        currency_frame.place(x=60, y=80)
+        currency_frame.place(x=100, y=80)
         CTkLabel(currency_frame, text="Курсы валют:", font=self.font['h3']).place(x=10, y=10)
         CTkLabel(currency_frame, text="Валюта      Покупка      Продажа", font=self.font["h5"]).place(x=10, y=40)
 
@@ -158,7 +158,7 @@ class GUIManager:
                   text="обновить",
                   width=10,
                   command=lambda: threading.Thread(target=get_curent_currency, daemon=True).start()
-                  ).place(x=220, y=90)
+                  ).place(x=260, y=90)
 
         threading.Thread(target=get_curent_currency, daemon=True).start()
 
